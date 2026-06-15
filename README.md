@@ -24,10 +24,13 @@ Built with React, Express, MongoDB, Clerk Authentication, and Socket.IO, the pla
 
 ### 💬 Real-Time Messaging
 
-* ⚡ Instant real-time messaging using Socket.IO
-* 📩 One-to-one private conversations
-* 🔄 Live message updates without page refresh
-* 📱 Responsive chat interface
+* ⚡ **Instant Messaging:** Real-time communication powered by Socket.IO.
+* 📩 **One-to-One Chat:** Private, direct conversations.
+* 🔄 **Message Replying:** Inline reply functionality to easily reference specific messages in a thread.
+* ⌨️ **Typing Indicators:** Real-time visual feedback when a user is actively typing.
+* 🔗 **Instant Context Sharing:** Automatic connection messages dispatched simultaneously when selecting media files to share.
+* 🔄 **Live Updates:** Seamless layout and status updates without manual page refreshes.
+* 📱 **Responsive UI:** Tailored interface for an optimal mobile and desktop layout.
 
 ### 🟢 User Presence
 
@@ -110,9 +113,11 @@ Built with React, Express, MongoDB, Clerk Authentication, and Socket.IO, the pla
 ### 💬 Chat System
 
 * Real-time messaging
+* **Inline message replies** for clear chat contexts
+* **Live typing feedback** via web sockets
 * Conversation sidebar
 * Message history
-* Image messages
+* **Optimized image sharing** with automated placeholder/connection messages on selection
 * Readable chat interface
 
 ### 🎨 Appearance Settings
@@ -127,6 +132,7 @@ Built with React, Express, MongoDB, Clerk Authentication, and Socket.IO, the pla
 
 * Online status tracking
 * Instant message delivery
+* **Typing and reply event synchronization**
 * Live conversation updates
 * Socket-based communication
 

@@ -19,6 +19,8 @@ export const useChatStore = create(
       searchQuery: "",
       sidebarTab: "chats",
       composerText: "",
+      replyingTo: null,
+      typingUsers: {},
       isSoundEnabled: true,
       isSendingMedia: false,
 
@@ -66,12 +68,21 @@ export const useChatStore = create(
       },
 
       sendMessage: async (messageData) => {
-        const { selectedUser, messages } = get();
+        const { selectedUser, messages, replyingTo } = get();
         if (!selectedUser) return false;
 
         try {
+          if (replyingTo) {
+            if (messageData instanceof FormData) {
+              messageData.append("replyTo", replyingTo.id);
+            } else {
+              messageData = { ...messageData, replyTo: replyingTo.id };
+            }
+          }
+
           const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-          set({ messages: [...messages, res.data], composerText: "" });
+          set({ messages: [...messages, res.data], composerText: "", replyingTo: null });
+          get().stopTyping(selectedUser._id);
           get().getConversations();
           return true;
         } catch (error) {
@@ -92,6 +103,9 @@ export const useChatStore = create(
           if (String(newMessage.senderId) !== String(userId)) return;
 
           set({ messages: [...get().messages, newMessage] });
+          set((state) => ({
+            typingUsers: { ...state.typingUsers, [newMessage.senderId]: false },
+          }));
 
           get().getConversations();
         });
@@ -100,6 +114,26 @@ export const useChatStore = create(
       unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;
         socket?.off("newMessage");
+      },
+
+      subscribeToTyping: () => {
+        const socket = useAuthStore.getState().socket;
+        if (!socket) return;
+
+        socket.off("userTyping");
+        socket.on("userTyping", ({ senderId, isTyping }) => {
+          if (!senderId) return;
+
+          set((state) => ({
+            typingUsers: { ...state.typingUsers, [senderId]: Boolean(isTyping) },
+          }));
+        });
+      },
+
+      unsubscribeFromTyping: () => {
+        const socket = useAuthStore.getState().socket;
+        socket?.off("userTyping");
+        set({ typingUsers: {} });
       },
 
       setSelectedUser: (selectedUser) => set({ selectedUser }),
@@ -118,7 +152,23 @@ export const useChatStore = create(
       setSearchQuery: (searchQuery) => set({ searchQuery }),
       setSidebarTab: (sidebarTab) => set({ sidebarTab }),
       setComposerText: (composerText) => set({ composerText }),
+      setReplyingTo: (replyingTo) => set({ replyingTo }),
+      clearReplyingTo: () => set({ replyingTo: null }),
       setSoundEnabled: (isSoundEnabled) => set({ isSoundEnabled }),
+
+      startTyping: (conversationId) => {
+        const socket = useAuthStore.getState().socket;
+        if (!socket || !conversationId) return;
+
+        socket.emit("typing:start", { receiverId: conversationId });
+      },
+
+      stopTyping: (conversationId) => {
+        const socket = useAuthStore.getState().socket;
+        if (!socket || !conversationId) return;
+
+        socket.emit("typing:stop", { receiverId: conversationId });
+      },
 
       sendTextMessage: async (conversationId) => {
         const messageText = get().composerText.trim();
@@ -127,11 +177,12 @@ export const useChatStore = create(
         return get().sendMessage({ text: messageText });
       },
 
-      sendMediaMessage: async ({ conversationId, file }) => {
+      sendMediaMessage: async ({ conversationId, file, text }) => {
         if (!conversationId || !file) return false;
 
         const formData = new FormData();
         formData.append("media", file);
+        if (text?.trim()) formData.append("text", text.trim());
 
         set({ isSendingMedia: true });
         try {

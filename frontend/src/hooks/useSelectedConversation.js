@@ -19,6 +19,25 @@ export function getInitials(name) {
 // 2. User → peer
 
 function mapUserToConversation({ user, messages, authUser, onlineUsers }) {
+  const rawMessageById = new Map(messages.map((message) => [String(message._id), message]));
+  const mapReplyPreview = (replyTo) => {
+    const replyMessage =
+      typeof replyTo === "object" && replyTo !== null ? replyTo : rawMessageById.get(String(replyTo));
+
+    if (!replyMessage) return null;
+
+    const hasImage = Boolean(replyMessage.image);
+    const hasVideo = Boolean(replyMessage.video);
+
+    return {
+      id: replyMessage._id,
+      role: String(replyMessage.senderId) === String(authUser?._id) ? "me" : "them",
+      text: replyMessage.text || (hasImage ? "Photo" : hasVideo ? "Video" : "Message"),
+      imageUrl: replyMessage.image,
+      videoUrl: replyMessage.video,
+    };
+  };
+
   const mappedMessages = messages.map((message) => ({
     id: message._id,
     role: String(message.senderId) === String(authUser?._id) ? "me" : "them",
@@ -26,6 +45,7 @@ function mapUserToConversation({ user, messages, authUser, onlineUsers }) {
     time: formatMessageTime(message.createdAt),
     imageUrl: message.image,
     videoUrl: message.video,
+    replyTo: mapReplyPreview(message.replyTo),
   }));
 
   return {
@@ -34,6 +54,7 @@ function mapUserToConversation({ user, messages, authUser, onlineUsers }) {
       name: user.fullName,
       subtitle: user.email,
       isOnline: onlineUsers.includes(user._id),
+      isTyping: false,
       avatarUrl: user.profilePic,
       initials: getInitials(user.fullName),
     },
@@ -46,6 +67,7 @@ export function useSelectedConversation() {
   const conversations = useChatStore((state) => state.conversations);
   const users = useChatStore((state) => state.users);
   const messages = useChatStore((state) => state.messages);
+  const typingUsers = useChatStore((state) => state.typingUsers);
 
   const authUser = useAuthStore((state) => state.authUser);
   const onlineUsers = useAuthStore((state) => state.onlineUsers);
@@ -60,6 +82,10 @@ export function useSelectedConversation() {
   const activeConversation = selectedUser
     ? mapUserToConversation({ user: selectedUser, messages, authUser, onlineUsers })
     : null;
+
+  if (activeConversation) {
+    activeConversation.peer.isTyping = Boolean(typingUsers[activeConversation.id]);
+  }
 
   return {
     activeConversation,

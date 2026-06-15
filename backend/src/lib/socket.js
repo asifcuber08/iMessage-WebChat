@@ -9,26 +9,57 @@ const allowedOrigin = process.env.FRONTEND_URL || "http://localhost:5173";
 
 const io = new Server(server, { cors: { origin: [allowedOrigin] } });
 
-function getReceiverSocketId(userId) {
-  return userSocketMap[userId];
+function getReceiverSocketIds(userId) {
+  return Array.from(userSocketMap[userId] || []);
 }
 
-// online users map = { userId: socketId }
+function getReceiverSocketId(userId) {
+  return getReceiverSocketIds(userId)[0];
+}
+
+// online users map = { userId: Set(socketId) }
 const userSocketMap = {};
+
+function getOnlineUserIds() {
+  return Object.keys(userSocketMap).filter((userId) => userSocketMap[userId]?.size);
+}
 
 io.on("connection", (socket) => {
   const userId = socket.handshake.query.userId;
 
-  if (userId) userSocketMap[userId] = socket.id;
+  if (userId) {
+    if (!userSocketMap[userId]) userSocketMap[userId] = new Set();
+    userSocketMap[userId].add(socket.id);
+  }
 
   // io.emit() sends event to everyone - broadcast
-  io.emit("getOnlineUsers", Object.keys(userSocketMap));
+  io.emit("getOnlineUsers", getOnlineUserIds());
+
+  socket.on("typing:start", ({ receiverId } = {}) => {
+    if (!userId || !receiverId) return;
+
+    getReceiverSocketIds(receiverId).forEach((socketId) => {
+      io.to(socketId).emit("userTyping", { senderId: userId, isTyping: true });
+    });
+  });
+
+  socket.on("typing:stop", ({ receiverId } = {}) => {
+    if (!userId || !receiverId) return;
+
+    getReceiverSocketIds(receiverId).forEach((socketId) => {
+      io.to(socketId).emit("userTyping", { senderId: userId, isTyping: false });
+    });
+  });
 
   // socket.on is used to listen for events
   socket.on("disconnect", () => {
-    if (userId) delete userSocketMap[userId];
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
+    if (userId && userSocketMap[userId]) {
+      userSocketMap[userId].delete(socket.id);
+      if (userSocketMap[userId].size === 0) delete userSocketMap[userId];
+    }
+
+    io.emit("getOnlineUsers", getOnlineUserIds());
   });
 });
 
-export { app, server, io, getReceiverSocketId };
+export { app, server, io, getReceiverSocketId, getReceiverSocketIds };

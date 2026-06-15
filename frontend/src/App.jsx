@@ -19,7 +19,6 @@ function App() {
   // option 2 - better for performance
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const checkAuth = useAuthStore((state) => state.checkAuth);
-  const isCheckingAuth = useAuthStore((state) => state.isCheckingAuth);
 
   useEffect(() => {
     if (!isLoaded) return;

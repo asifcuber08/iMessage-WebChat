@@ -21,6 +21,10 @@ const messageSchema = new mongoose.Schema(
     video: {
       type: String,
     },
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+    },
   },
   { timestamps: true },
 );

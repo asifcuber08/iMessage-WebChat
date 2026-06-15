@@ -51,7 +51,9 @@ export function ChatHeader() {
               {activeConversation.peer.name}
             </p>
             <p className="truncate text-xs text-muted">
-              {activeConversation.peer.isOnline ? (
+              {activeConversation.peer.isTyping ? (
+                <span className="font-medium text-success">Typing...</span>
+              ) : activeConversation.peer.isOnline ? (
                 <span className="font-medium text-success">Online</span>
               ) : (
                 "Offline"

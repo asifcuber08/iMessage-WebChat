@@ -1,7 +1,7 @@
 import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import { hasImageKitConfig, uploadChatMedia } from "../lib/imagekit.js";
-import { getReceiverSocketId, io } from "../lib/socket.js";
+import { getReceiverSocketIds, io } from "../lib/socket.js";
 
 export async function getUsersForSidebar(req, res) {
   try {
@@ -58,7 +58,9 @@ export async function getMessages(req, res) {
         { senderId: myId, receiverId: userToChatId },
         { senderId: userToChatId, receiverId: myId },
       ],
-    }).sort({ createdAt: 1 });
+    })
+      .populate("replyTo", "senderId receiverId text image video createdAt")
+      .sort({ createdAt: 1 });
 
     res.status(200).json(messages);
   } catch (error) {
@@ -69,7 +71,7 @@ export async function getMessages(req, res) {
 
 export async function sendMessage(req, res) {
   try {
-    const { text } = req.body;
+    const { text, replyTo } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -86,21 +88,39 @@ export async function sendMessage(req, res) {
       else imageUrl = url;
     }
 
+    let replyToMessageId;
+    if (replyTo) {
+      const repliedMessage = await Message.findOne({
+        _id: replyTo,
+        $or: [
+          { senderId, receiverId },
+          { senderId: receiverId, receiverId: senderId },
+        ],
+      }).select("_id");
+
+      if (!repliedMessage) {
+        return res.status(400).json({ message: "Reply target was not found in this chat" });
+      }
+
+      replyToMessageId = repliedMessage._id;
+    }
+
     const newMessage = new Message({
       senderId,
       receiverId,
       text,
       image: imageUrl,
       video: videoUrl,
+      replyTo: replyToMessageId,
     });
 
     await newMessage.save();
+    await newMessage.populate("replyTo", "senderId receiverId text image video createdAt");
 
-    const receiverSocketId = getReceiverSocketId(receiverId);
     // only send the message in realtime if user is online
-    if (receiverSocketId) {
+    getReceiverSocketIds(receiverId).forEach((receiverSocketId) => {
       io.to(receiverSocketId).emit("newMessage", newMessage);
-    }
+    });
 
     res.status(201).json(newMessage);
   } catch (error) {

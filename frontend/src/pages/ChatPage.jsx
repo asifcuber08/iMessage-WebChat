@@ -1,5 +1,6 @@
 import { useWallpaper } from "../context/wallpaper";
 import { useChatStore } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
 import { useSelectedConversation } from "../hooks/useSelectedConversation";
 import { useEffect } from "react";
 import ChatSidebar from "../components/chat/ChatSidebar";
@@ -14,7 +15,10 @@ function ChatPage() {
   const getMessages = useChatStore((state) => state.getMessages);
   const getUsers = useChatStore((state) => state.getUsers);
   const subscribeToMessages = useChatStore((state) => state.subscribeToMessages);
+  const subscribeToTyping = useChatStore((state) => state.subscribeToTyping);
   const unsubscribeFromMessages = useChatStore((state) => state.unsubscribeFromMessages);
+  const unsubscribeFromTyping = useChatStore((state) => state.unsubscribeFromTyping);
+  const socket = useAuthStore((state) => state.socket);
 
   const { activeConversation, activeConversationId, isLargeScreen } = useSelectedConversation();
 
@@ -22,6 +26,14 @@ function ChatPage() {
     getUsers();
     getConversations();
   }, [getConversations, getUsers]);
+
+  useEffect(() => {
+    if (!socket) return undefined;
+
+    subscribeToTyping();
+
+    return () => unsubscribeFromTyping();
+  }, [socket, subscribeToTyping, unsubscribeFromTyping]);
 
   useEffect(() => {
     if (!activeConversationId) return;

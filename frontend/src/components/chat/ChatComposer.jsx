@@ -1,50 +1,147 @@
 import { Button, TextArea } from "@heroui/react";
-import { ImageIcon, LoaderIcon, SendHorizontalIcon } from "lucide-react";
-import { useRef } from "react";
+import { ImageIcon, LoaderIcon, SendHorizontalIcon, XIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import useKeyboardSound from "../../hooks/useKeyboardSound";
 import { useChatStore } from "../../store/useChatStore";
 import { useSelectedConversation } from "../../hooks/useSelectedConversation";
 
 export function ChatComposer() {
   const composerText = useChatStore((state) => state.composerText);
+  const replyingTo = useChatStore((state) => state.replyingTo);
   const isSoundEnabled = useChatStore((state) => state.isSoundEnabled);
   const sendMediaMessage = useChatStore((state) => state.sendMediaMessage);
   const isSendingMedia = useChatStore((state) => state.isSendingMedia);
   const sendTextMessage = useChatStore((state) => state.sendTextMessage);
+  const clearReplyingTo = useChatStore((state) => state.clearReplyingTo);
   const setComposerText = useChatStore((state) => state.setComposerText);
+  const startTyping = useChatStore((state) => state.startTyping);
+  const stopTyping = useChatStore((state) => state.stopTyping);
   const { activeConversationId } = useSelectedConversation();
   const { playRandomKeyStrokeSound } = useKeyboardSound();
   const mediaInputRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const [pickedMedia, setPickedMedia] = useState(null);
+
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      if (pickedMedia?.previewUrl) URL.revokeObjectURL(pickedMedia.previewUrl);
+    };
+  }, [pickedMedia]);
+
+  useEffect(() => {
+    if (!activeConversationId) return undefined;
+
+    return () => {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      stopTyping(activeConversationId);
+    };
+  }, [activeConversationId, stopTyping]);
 
   const playSoundIfEnabled = () => {
     if (isSoundEnabled) playRandomKeyStrokeSound();
   };
 
   const handleSend = async () => {
-    const didSendMessage = await sendTextMessage(activeConversationId);
+    const didSendMessage = pickedMedia
+      ? await sendMediaMessage({
+          conversationId: activeConversationId,
+          file: pickedMedia.file,
+          text: composerText,
+        })
+      : await sendTextMessage(activeConversationId);
+
+    if (didSendMessage && pickedMedia?.previewUrl) {
+      URL.revokeObjectURL(pickedMedia.previewUrl);
+      setPickedMedia(null);
+    }
+
     if (didSendMessage) playSoundIfEnabled();
   };
 
   const handleComposerTextChange = (event) => {
-    setComposerText(event.target.value);
+    const nextText = event.target.value;
+    setComposerText(nextText);
     playSoundIfEnabled();
+
+    if (!activeConversationId) return;
+
+    if (nextText.trim()) {
+      startTyping(activeConversationId);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        stopTyping(activeConversationId);
+      }, 2000);
+    } else {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      stopTyping(activeConversationId);
+    }
   };
 
-  const handleMediaPick = async (event) => {
+  const handleMediaPick = (event) => {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
 
-    const didSendMessage = await sendMediaMessage({
-      conversationId: activeConversationId,
-      file,
-    });
+    if (pickedMedia?.previewUrl) URL.revokeObjectURL(pickedMedia.previewUrl);
 
-    if (didSendMessage) playSoundIfEnabled();
+    setPickedMedia({
+      file,
+      previewUrl: URL.createObjectURL(file),
+      type: file.type.startsWith("video/") ? "video" : "image",
+    });
+  };
+
+  const clearPickedMedia = () => {
+    if (pickedMedia?.previewUrl) URL.revokeObjectURL(pickedMedia.previewUrl);
+    setPickedMedia(null);
   };
 
   return (
     <footer className="shrink-0 border-t border-border px-1.5 pb-2 pt-2 sm:px-2">
+      {replyingTo ? (
+        <div className="mx-auto mb-2 flex max-w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm">
+          <div className="min-w-0 flex-1 border-l-2 border-accent pl-2">
+            <p className="text-xs font-semibold text-accent">
+              Replying to {replyingTo.role === "me" ? "your message" : "message"}
+            </p>
+            <p className="truncate text-xs text-muted">{replyingTo.text || "Media"}</p>
+          </div>
+          <Button variant="ghost" size="sm" isIconOnly onPress={clearReplyingTo}>
+            <XIcon className="size-4" strokeWidth={2} />
+          </Button>
+        </div>
+      ) : null}
+      {pickedMedia ? (
+        <div className="mx-auto mb-2 flex max-w-full items-center gap-3 rounded-xl border border-border bg-surface px-3 py-2">
+          {pickedMedia.type === "image" ? (
+            <img
+              src={pickedMedia.previewUrl}
+              alt=""
+              className="size-16 shrink-0 rounded-lg object-cover"
+            />
+          ) : (
+            <video
+              src={pickedMedia.previewUrl}
+              className="size-16 shrink-0 rounded-lg object-cover"
+              muted
+            />
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{pickedMedia.file.name}</p>
+            <p className="text-xs text-muted">Add a caption below, then send.</p>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            isIconOnly
+            isDisabled={isSendingMedia}
+            onPress={clearPickedMedia}
+          >
+            <XIcon className="size-4" strokeWidth={2} />
+          </Button>
+        </div>
+      ) : null}
       {isSendingMedia ? (
         <div className="mx-auto mb-2 flex max-w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm text-muted">
           <LoaderIcon
@@ -91,7 +188,12 @@ export function ChatComposer() {
           className="flex-1 rounded-full"
         />
 
-        <Button variant="primary" isIconOnly isDisabled={!composerText.trim()} onPress={handleSend}>
+        <Button
+          variant="primary"
+          isIconOnly
+          isDisabled={isSendingMedia || (!composerText.trim() && !pickedMedia)}
+          onPress={handleSend}
+        >
           <SendHorizontalIcon className="size-5" />
         </Button>
       </div>
