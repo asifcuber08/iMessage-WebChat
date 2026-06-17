@@ -21,23 +21,52 @@ export async function getConversationsForSidebar(req, res) {
     const loggedInUserId = req.user._id;
 
     const conversations = await Message.aggregate([
-      // 1. Keep only the messages I sent or received.
       { $match: { $or: [{ senderId: loggedInUserId }, { receiverId: loggedInUserId }] } },
-      // 2. Collapse them into one row per chat partner, noting our latest message time.
+      { $sort: { createdAt: -1 } },
       {
         $group: {
-          // The partner is the other person on the message (not me).
           _id: { $cond: [{ $eq: ["$senderId", loggedInUserId] }, "$receiverId", "$senderId"] },
-          lastMessageAt: { $max: "$createdAt" },
+          lastMessage: { $first: "$$ROOT" },
+          unreadCount: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    { $eq: ["$receiverId", loggedInUserId] },
+                    { $not: [{ $in: [loggedInUserId, { $ifNull: ["$readBy", []] }] }] },
+                  ],
+                },
+                1,
+                0,
+              ],
+            },
+          },
         },
       },
-      // 3. Put the most recent conversation at the top.
-      { $sort: { lastMessageAt: -1 } },
-      // 4. Look up each partner's user profile (comes back as an array).
+      { $sort: { "lastMessage.createdAt": -1 } },
       { $lookup: { from: "users", localField: "_id", foreignField: "_id", as: "user" } },
-      // 5. Pull that profile out of the array and make it the document.
-      { $replaceRoot: { newRoot: { $first: "$user" } } },
-      // 6. Hide the private clerkId field from the result.
+      { $unwind: "$user" },
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              "$user",
+              {
+                lastMessage: {
+                  _id: "$lastMessage._id",
+                  senderId: "$lastMessage.senderId",
+                  receiverId: "$lastMessage.receiverId",
+                  text: "$lastMessage.text",
+                  image: "$lastMessage.image",
+                  video: "$lastMessage.video",
+                  createdAt: "$lastMessage.createdAt",
+                },
+                unreadCount: "$unreadCount",
+              },
+            ],
+          },
+        },
+      },
       { $project: { clerkId: 0 } },
     ]);
 
@@ -52,6 +81,11 @@ export async function getMessages(req, res) {
   try {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
+
+    await Message.updateMany(
+      { senderId: userToChatId, receiverId: myId, readBy: { $ne: myId } },
+      { $addToSet: { readBy: myId } },
+    );
 
     const messages = await Message.find({
       $or: [
@@ -112,6 +146,7 @@ export async function sendMessage(req, res) {
       image: imageUrl,
       video: videoUrl,
       replyTo: replyToMessageId,
+      readBy: [senderId],
     });
 
     await newMessage.save();
@@ -125,6 +160,41 @@ export async function sendMessage(req, res) {
     res.status(201).json(newMessage);
   } catch (error) {
     console.error("Error in sendMessage:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function deleteMessage(req, res) {
+  try {
+    const { id: messageId } = req.params;
+    const userId = req.user._id;
+
+    const message = await Message.findOne({
+      _id: messageId,
+      $or: [{ senderId: userId }, { receiverId: userId }],
+    });
+
+    if (!message) {
+      return res.status(404).json({ message: "Message was not found" });
+    }
+
+    await Message.deleteOne({ _id: message._id });
+
+    const payload = {
+      messageId: String(message._id),
+      senderId: String(message.senderId),
+      receiverId: String(message.receiverId),
+    };
+
+    [message.senderId, message.receiverId].forEach((participantId) => {
+      getReceiverSocketIds(participantId).forEach((socketId) => {
+        io.to(socketId).emit("messageDeleted", payload);
+      });
+    });
+
+    res.status(200).json(payload);
+  } catch (error) {
+    console.error("Error in deleteMessage:", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 }

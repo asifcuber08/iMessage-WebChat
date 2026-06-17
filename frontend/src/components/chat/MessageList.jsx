@@ -6,6 +6,7 @@ import { useChatStore } from "../../store/useChatStore";
 
 export function MessageList() {
   const { activeConversation, activeConversationId } = useSelectedConversation();
+  const deleteMessage = useChatStore((state) => state.deleteMessage);
   const setReplyingTo = useChatStore((state) => state.setReplyingTo);
 
   const lastMessageId = activeConversation?.messages.at(-1)?.id;
@@ -22,7 +23,12 @@ export function MessageList() {
             Today
           </p>
           {activeConversation.messages.map((message) => (
-            <MessageBubble key={message.id} message={message} onReply={setReplyingTo} />
+            <MessageBubble
+              key={message.id}
+              message={message}
+              onDelete={deleteMessage}
+              onReply={setReplyingTo}
+            />
           ))}
         </div>
       ) : (

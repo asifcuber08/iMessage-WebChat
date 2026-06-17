@@ -16,7 +16,7 @@ export function ThemePresetPicker() {
   return (
     <Modal.Root state={modal}>
       <Modal.Trigger>
-        <Button variant="ghost" size="sm" isIconOnly className="text-foreground">
+        <Button variant="ghost" size="sm" isIconOnly className="size-8 text-foreground sm:size-9">
           <Palette className="size-5" />
         </Button>
       </Modal.Trigger>

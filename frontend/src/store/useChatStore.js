@@ -23,6 +23,7 @@ export const useChatStore = create(
       typingUsers: {},
       isSoundEnabled: true,
       isSendingMedia: false,
+      hasRequestedNotifications: false,
 
       getUsers: async () => {
         set({ isUsersLoading: true });
@@ -60,6 +61,7 @@ export const useChatStore = create(
         try {
           const res = await axiosInstance.get(`/messages/${userId}`);
           set({ messages: res.data });
+          get().getConversations();
         } catch (error) {
           toast.error(error.response?.data?.message || "Failed to load messages");
         } finally {
@@ -91,22 +93,38 @@ export const useChatStore = create(
         }
       },
 
-      subscribeToMessages: (userId) => {
-        if (!userId) return;
-
+      subscribeToMessages: () => {
         const socket = useAuthStore.getState().socket;
         if (!socket) return;
 
         socket.off("newMessage");
         socket.on("newMessage", (newMessage) => {
-          // if im not the receiver don't do anything just return
-          if (String(newMessage.senderId) !== String(userId)) return;
+          const { activeConversationId, messages } = get();
+          const senderId = String(newMessage.senderId);
+          const isOpenConversation = String(activeConversationId) === senderId;
 
-          set({ messages: [...get().messages, newMessage] });
+          if (isOpenConversation) {
+            set({ messages: [...messages, newMessage] });
+            axiosInstance.get(`/messages/${senderId}`).then((res) => {
+              set({ messages: res.data });
+              get().getConversations();
+            });
+          } else {
+            get().showBrowserNotification(newMessage);
+            get().getConversations();
+          }
+
           set((state) => ({
             typingUsers: { ...state.typingUsers, [newMessage.senderId]: false },
           }));
+        });
 
+        socket.off("messageDeleted");
+        socket.on("messageDeleted", ({ messageId, senderId, receiverId }) => {
+          set((state) => ({
+            messages: state.messages.filter((message) => String(message._id) !== String(messageId)),
+            typingUsers: { ...state.typingUsers, [senderId]: false, [receiverId]: false },
+          }));
           get().getConversations();
         });
       },
@@ -114,6 +132,7 @@ export const useChatStore = create(
       unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;
         socket?.off("newMessage");
+        socket?.off("messageDeleted");
       },
 
       subscribeToTyping: () => {
@@ -147,6 +166,62 @@ export const useChatStore = create(
             null,
           messages: activeConversationId ? state.messages : [],
         }));
+      },
+
+      deleteMessage: async (messageId) => {
+        try {
+          await axiosInstance.delete(`/messages/${messageId}`);
+          set((state) => ({
+            messages: state.messages.filter((message) => String(message._id) !== String(messageId)),
+          }));
+          get().getConversations();
+          return true;
+        } catch (error) {
+          toast.error(error.response?.data?.message || "Failed to delete message");
+          return false;
+        }
+      },
+
+      requestNotificationPermission: async () => {
+        if (!("Notification" in window) || Notification.permission !== "default") return;
+        if (get().hasRequestedNotifications) return;
+
+        set({ hasRequestedNotifications: true });
+        try {
+          await Notification.requestPermission();
+        } catch {
+          // The browser can block permission prompts until a user gesture.
+        }
+      },
+
+      showBrowserNotification: (message) => {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+        if (document.visibilityState === "visible") return;
+
+        const sender =
+          get().users.find((user) => String(user._id) === String(message.senderId)) ||
+          get().conversations.find((user) => String(user._id) === String(message.senderId));
+        const title = sender?.fullName || "New message";
+        const body = message.text || (message.image ? "Photo" : message.video ? "Video" : "Message");
+
+        const fallbackNotification = () => new Notification(title, { body, icon: "/logo.png" });
+
+        if (!navigator.serviceWorker?.ready) {
+          fallbackNotification();
+          return;
+        }
+
+        navigator.serviceWorker.ready
+          .then((registration) =>
+            registration.showNotification(title, {
+              body,
+              icon: "/logo.png",
+              badge: "/favicon.svg",
+              tag: `message-${message.senderId}`,
+              data: { url: "/" },
+            }),
+          )
+          .catch(fallbackNotification);
       },
 
       setSearchQuery: (searchQuery) => set({ searchQuery }),
@@ -194,7 +269,10 @@ export const useChatStore = create(
     }),
     {
       name: "imessage-storage",
-      partialize: (state) => ({ isSoundEnabled: state.isSoundEnabled }),
+      partialize: (state) => ({
+        hasRequestedNotifications: state.hasRequestedNotifications,
+        isSoundEnabled: state.isSoundEnabled,
+      }),
     },
   ),
 );

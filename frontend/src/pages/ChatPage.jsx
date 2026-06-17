@@ -14,10 +14,12 @@ function ChatPage() {
   const getConversations = useChatStore((state) => state.getConversations);
   const getMessages = useChatStore((state) => state.getMessages);
   const getUsers = useChatStore((state) => state.getUsers);
+  const requestNotificationPermission = useChatStore((state) => state.requestNotificationPermission);
   const subscribeToMessages = useChatStore((state) => state.subscribeToMessages);
   const subscribeToTyping = useChatStore((state) => state.subscribeToTyping);
   const unsubscribeFromMessages = useChatStore((state) => state.unsubscribeFromMessages);
   const unsubscribeFromTyping = useChatStore((state) => state.unsubscribeFromTyping);
+  const onlineUsers = useAuthStore((state) => state.onlineUsers);
   const socket = useAuthStore((state) => state.socket);
 
   const { activeConversation, activeConversationId, isLargeScreen } = useSelectedConversation();
@@ -25,25 +27,31 @@ function ChatPage() {
   useEffect(() => {
     getUsers();
     getConversations();
-  }, [getConversations, getUsers]);
+    requestNotificationPermission();
+  }, [getConversations, getUsers, requestNotificationPermission]);
+
+  useEffect(() => {
+    getUsers();
+    getConversations();
+  }, [getConversations, getUsers, onlineUsers]);
 
   useEffect(() => {
     if (!socket) return undefined;
 
+    subscribeToMessages();
     subscribeToTyping();
 
-    return () => unsubscribeFromTyping();
-  }, [socket, subscribeToTyping, unsubscribeFromTyping]);
+    return () => {
+      unsubscribeFromMessages();
+      unsubscribeFromTyping();
+    };
+  }, [socket, subscribeToMessages, subscribeToTyping, unsubscribeFromMessages, unsubscribeFromTyping]);
 
   useEffect(() => {
     if (!activeConversationId) return;
 
     getMessages(activeConversationId);
-    subscribeToMessages(activeConversationId);
-
-    // cleanup
-    return () => unsubscribeFromMessages();
-  }, [getMessages, activeConversationId, subscribeToMessages, unsubscribeFromMessages]);
+  }, [getMessages, activeConversationId]);
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden p-2 sm:p-3 md:p-8" style={frameStyle}>

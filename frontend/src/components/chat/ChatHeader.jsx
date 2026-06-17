@@ -10,6 +10,7 @@ import { WallpaperPicker } from "../WallpaperPicker";
 
 import { useChatStore } from "../../store/useChatStore";
 import { useSelectedConversation } from "../../hooks/useSelectedConversation";
+import { formatLastSeen } from "../../lib/utils";
 
 export function ChatHeader() {
   const isSoundEnabled = useChatStore((state) => state.isSoundEnabled);
@@ -25,7 +26,7 @@ export function ChatHeader() {
           variant="ghost"
           size="sm"
           isIconOnly
-          className="shrink-0"
+          className="size-8 shrink-0 sm:size-9"
           onPress={() => setActiveConversationId(null)}
         >
           <ChevronLeftIcon className="size-6" strokeWidth={2.25} />
@@ -56,7 +57,7 @@ export function ChatHeader() {
               ) : activeConversation.peer.isOnline ? (
                 <span className="font-medium text-success">Online</span>
               ) : (
-                "Offline"
+                formatLastSeen(activeConversation.peer.lastSeen)
               )}
             </p>
           </div>
@@ -70,8 +71,8 @@ export function ChatHeader() {
         </div>
       )}
 
-      <div className="ml-auto flex max-w-full shrink-0 flex-wrap items-center justify-end gap-0.5 sm:gap-1">
-        <div className="hidden min-[400px]:contents">
+      <div className="ml-auto flex max-w-full shrink-0 items-center justify-end gap-0.5 rounded-full bg-surface/70 px-1 py-0.5 sm:gap-1 sm:bg-transparent sm:px-0 sm:py-0">
+        <div className="hidden min-[460px]:contents">
           <WallpaperPicker />
           <ThemePresetPicker />
         </div>
@@ -82,7 +83,7 @@ export function ChatHeader() {
           variant="ghost"
           size="sm"
           isIconOnly
-          className="shrink-0"
+          className="size-8 shrink-0 sm:size-9"
           aria-pressed={isSoundEnabled}
           onPress={() => setSoundEnabled(!isSoundEnabled)}
         >
@@ -98,7 +99,7 @@ export function ChatHeader() {
             variant="ghost"
             size="sm"
             isIconOnly
-            className="shrink-0"
+            className="size-8 shrink-0 sm:size-9"
             aria-label="Close chat"
             onPress={() => setActiveConversationId(null)}
           >

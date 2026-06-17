@@ -1,6 +1,7 @@
 import { getInitials, useSelectedConversation } from "../../hooks/useSelectedConversation";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useChatStore } from "../../store/useChatStore";
+import { formatConversationTime, getMessagePreview } from "../../lib/utils";
 import { APP_NAME, AppLogo } from "../AppLogo";
 import { UserButton } from "@clerk/react";
 
@@ -8,7 +9,7 @@ import { SearchField, Tabs } from "@heroui/react";
 import { MessageSquareIcon, UsersIcon } from "lucide-react";
 import { ConversationRow } from "./ConversationRow";
 
-function mapUserForList(user, onlineUsers) {
+function mapUserForList(user, onlineUsers, authUser) {
   return {
     conversationId: user._id,
     id: user._id,
@@ -16,6 +17,10 @@ function mapUserForList(user, onlineUsers) {
     avatarUrl: user.profilePic,
     initials: getInitials(user.fullName),
     isOnline: onlineUsers.includes(user._id),
+    lastSeen: user.lastSeen,
+    lastMessagePreview: getMessagePreview(user.lastMessage, authUser?._id),
+    lastMessageTime: user.lastMessage?.createdAt ? formatConversationTime(user.lastMessage.createdAt) : "",
+    unreadCount: user.unreadCount || 0,
     peer: {
       name: user.fullName,
       avatarUrl: user.profilePic,
@@ -27,8 +32,6 @@ function mapUserForList(user, onlineUsers) {
 
 function ChatSidebar() {
   const conversations = useChatStore((state) => state.conversations);
-
-  console.log(conversations);
   const users = useChatStore((state) => state.users);
 
   const searchQuery = useChatStore((state) => state.searchQuery);
@@ -40,13 +43,14 @@ function ChatSidebar() {
   const setActiveConversationId = useChatStore((state) => state.setActiveConversationId);
 
   const onlineUsers = useAuthStore((state) => state.onlineUsers);
+  const authUser = useAuthStore((state) => state.authUser);
 
   const { activeConversationId, isLargeScreen } = useSelectedConversation();
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
 
-  const conversationUsers = conversations.map((user) => mapUserForList(user, onlineUsers));
-  const allUsers = users.map((user) => mapUserForList(user, onlineUsers));
+  const conversationUsers = conversations.map((user) => mapUserForList(user, onlineUsers, authUser));
+  const allUsers = users.map((user) => mapUserForList(user, onlineUsers, authUser));
 
   const filteredConversations = normalizedSearchQuery
     ? conversationUsers.filter((conversation) =>

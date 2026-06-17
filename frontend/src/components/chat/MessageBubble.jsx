@@ -1,17 +1,18 @@
 import { Button } from "@heroui/react";
-import { CornerUpLeftIcon } from "lucide-react";
+import { CornerUpLeftIcon, Trash2Icon } from "lucide-react";
 import { withTransform } from "../../lib/imagekit";
 import { MessageVideo } from "./MessageVideo";
 
 // Compress + size images for the bubble (q-auto works for images; f-auto picks WebP/AVIF).
 const IMAGE_TRANSFORM = "q-auto,w-640,f-auto";
 
-export function MessageBubble({ message, onReply }) {
+export function MessageBubble({ message, onDelete, onReply }) {
   const isOwnMessage = message.role === "me";
   const hasImage = Boolean(message.imageUrl);
   const hasVideo = Boolean(message.videoUrl);
 
   const handleReply = () => onReply?.(message);
+  const handleDelete = () => onDelete?.(message.id);
 
   return (
     <div
@@ -20,16 +21,28 @@ export function MessageBubble({ message, onReply }) {
       }`}
     >
       {isOwnMessage ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          isIconOnly
-          className="mb-1 size-7 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-          aria-label="Reply to message"
-          onPress={handleReply}
-        >
-          <CornerUpLeftIcon className="size-4" strokeWidth={2} />
-        </Button>
+        <div className="mb-1 flex opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
+          <Button
+            variant="ghost"
+            size="sm"
+            isIconOnly
+            className="size-7"
+            aria-label="Delete message for everyone"
+            onPress={handleDelete}
+          >
+            <Trash2Icon className="size-4" strokeWidth={2} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            isIconOnly
+            className="size-7"
+            aria-label="Reply to message"
+            onPress={handleReply}
+          >
+            <CornerUpLeftIcon className="size-4" strokeWidth={2} />
+          </Button>
+        </div>
       ) : null}
       <div
         role="button"
@@ -78,16 +91,28 @@ export function MessageBubble({ message, onReply }) {
         </p>
       </div>
       {!isOwnMessage ? (
-        <Button
-          variant="ghost"
-          size="sm"
-          isIconOnly
-          className="mb-1 size-7 opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
-          aria-label="Reply to message"
-          onPress={handleReply}
-        >
-          <CornerUpLeftIcon className="size-4" strokeWidth={2} />
-        </Button>
+        <div className="mb-1 flex opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
+          <Button
+            variant="ghost"
+            size="sm"
+            isIconOnly
+            className="size-7"
+            aria-label="Reply to message"
+            onPress={handleReply}
+          >
+            <CornerUpLeftIcon className="size-4" strokeWidth={2} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            isIconOnly
+            className="size-7"
+            aria-label="Delete message for everyone"
+            onPress={handleDelete}
+          >
+            <Trash2Icon className="size-4" strokeWidth={2} />
+          </Button>
+        </div>
       ) : null}
     </div>
   );

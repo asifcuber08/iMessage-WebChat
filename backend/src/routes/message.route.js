@@ -1,5 +1,6 @@
 import express from "express";
 import {
+  deleteMessage,
   getConversationsForSidebar,
   getMessages,
   getUsersForSidebar,
@@ -16,5 +17,6 @@ router.get("/users", getUsersForSidebar);
 router.get("/conversations", getConversationsForSidebar);
 router.get("/:id", getMessages);
 router.post("/send/:id", upload.single("media"), sendMessage);
+router.delete("/:id", deleteMessage);
 
 export default router;

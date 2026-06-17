@@ -1,6 +1,7 @@
 import express from "express";
 import http from "http";
 import { Server } from "socket.io";
+import User from "../models/user.model.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -30,6 +31,7 @@ io.on("connection", (socket) => {
   if (userId) {
     if (!userSocketMap[userId]) userSocketMap[userId] = new Set();
     userSocketMap[userId].add(socket.id);
+    User.findByIdAndUpdate(userId, { lastSeen: new Date() }).catch(() => {});
   }
 
   // io.emit() sends event to everyone - broadcast
@@ -55,7 +57,10 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     if (userId && userSocketMap[userId]) {
       userSocketMap[userId].delete(socket.id);
-      if (userSocketMap[userId].size === 0) delete userSocketMap[userId];
+      if (userSocketMap[userId].size === 0) {
+        delete userSocketMap[userId];
+        User.findByIdAndUpdate(userId, { lastSeen: new Date() }).catch(() => {});
+      }
     }
 
     io.emit("getOnlineUsers", getOnlineUserIds());
