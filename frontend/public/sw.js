@@ -6,6 +6,32 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+self.addEventListener("push", (event) => {
+  let payload;
+
+  try {
+    payload = event.data?.json() || {};
+  } catch {
+    payload = { body: event.data?.text() };
+  }
+
+  const title = payload.title || "New message";
+  const options = {
+    body: payload.body || "Open iMessage to read it.",
+    icon: payload.icon || "/logo.png",
+    badge: payload.badge || "/favicon.svg",
+    tag: payload.tag || "new-message",
+    renotify: true,
+    data: {
+      url: payload.url || "/",
+      senderId: payload.senderId,
+      messageId: payload.messageId,
+    },
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 

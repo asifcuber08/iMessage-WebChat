@@ -18,6 +18,7 @@ export function ChatComposer() {
   const stopTyping = useChatStore((state) => state.stopTyping);
   const { activeConversationId } = useSelectedConversation();
   const { playRandomKeyStrokeSound } = useKeyboardSound();
+  const composerRootRef = useRef(null);
   const mediaInputRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const [pickedMedia, setPickedMedia] = useState(null);
@@ -42,6 +43,10 @@ export function ChatComposer() {
     if (isSoundEnabled) playRandomKeyStrokeSound();
   };
 
+  const focusComposer = () => {
+    composerRootRef.current?.querySelector("textarea")?.focus({ preventScroll: true });
+  };
+
   const handleSend = async () => {
     const didSendMessage = pickedMedia
       ? await sendMediaMessage({
@@ -57,6 +62,7 @@ export function ChatComposer() {
     }
 
     if (didSendMessage) playSoundIfEnabled();
+    requestAnimationFrame(focusComposer);
   };
 
   const handleComposerTextChange = (event) => {
@@ -98,7 +104,10 @@ export function ChatComposer() {
   };
 
   return (
-    <footer className="shrink-0 border-t border-border px-1.5 pb-2 pt-2 sm:px-2">
+    <footer
+      ref={composerRootRef}
+      className="shrink-0 border-t border-border px-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 sm:px-2"
+    >
       {replyingTo ? (
         <div className="mx-auto mb-2 flex max-w-full items-center gap-2 rounded-xl border border-border bg-surface px-3 py-2 text-sm">
           <div className="min-w-0 flex-1 border-l-2 border-accent pl-2">
@@ -192,6 +201,7 @@ export function ChatComposer() {
           variant="primary"
           isIconOnly
           isDisabled={isSendingMedia || (!composerText.trim() && !pickedMedia)}
+          onMouseDown={(event) => event.preventDefault()}
           onPress={handleSend}
         >
           <SendHorizontalIcon className="size-5" />

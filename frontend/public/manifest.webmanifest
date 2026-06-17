@@ -1,6 +1,6 @@
 {
   "name": "iMessage WebChat",
-  "short_name": "WebChat",
+  "short_name": "iMessage",
   "description": "A realtime chat app with installable mobile support.",
   "start_url": "/",
   "scope": "/",

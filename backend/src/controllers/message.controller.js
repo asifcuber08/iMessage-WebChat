@@ -2,6 +2,7 @@ import User from "../models/user.model.js";
 import Message from "../models/message.model.js";
 import { hasImageKitConfig, uploadChatMedia } from "../lib/imagekit.js";
 import { getReceiverSocketIds, io } from "../lib/socket.js";
+import { sendMessagePushNotification } from "../lib/push.js";
 
 export async function getUsersForSidebar(req, res) {
   try {
@@ -152,10 +153,22 @@ export async function sendMessage(req, res) {
     await newMessage.save();
     await newMessage.populate("replyTo", "senderId receiverId text image video createdAt");
 
+    const receiverSocketIds = getReceiverSocketIds(receiverId);
+
     // only send the message in realtime if user is online
-    getReceiverSocketIds(receiverId).forEach((receiverSocketId) => {
+    receiverSocketIds.forEach((receiverSocketId) => {
       io.to(receiverSocketId).emit("newMessage", newMessage);
     });
+
+    if (receiverSocketIds.length === 0) {
+      sendMessagePushNotification({
+        receiverId,
+        sender: req.user,
+        message: newMessage,
+      }).catch((error) => {
+        console.error("Error queueing push notification:", error.message);
+      });
+    }
 
     res.status(201).json(newMessage);
   } catch (error) {
@@ -169,13 +182,10 @@ export async function deleteMessage(req, res) {
     const { id: messageId } = req.params;
     const userId = req.user._id;
 
-    const message = await Message.findOne({
-      _id: messageId,
-      $or: [{ senderId: userId }, { receiverId: userId }],
-    });
+    const message = await Message.findOne({ _id: messageId, senderId: userId });
 
     if (!message) {
-      return res.status(404).json({ message: "Message was not found" });
+      return res.status(404).json({ message: "You can only delete messages you sent" });
     }
 
     await Message.deleteOne({ _id: message._id });
@@ -195,6 +205,42 @@ export async function deleteMessage(req, res) {
     res.status(200).json(payload);
   } catch (error) {
     console.error("Error in deleteMessage:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function savePushSubscription(req, res) {
+  try {
+    const { endpoint, expirationTime = null, keys } = req.body || {};
+
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      return res.status(400).json({ message: "Invalid push subscription" });
+    }
+
+    await User.updateOne(
+      { _id: req.user._id },
+      { $pull: { pushSubscriptions: { endpoint } } },
+    );
+
+    await User.updateOne(
+      { _id: req.user._id },
+      {
+        $push: {
+          pushSubscriptions: {
+            endpoint,
+            expirationTime,
+            keys: {
+              p256dh: keys.p256dh,
+              auth: keys.auth,
+            },
+          },
+        },
+      },
+    );
+
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error("Error in savePushSubscription:", error.message);
     res.status(500).json({ message: "Internal server error" });
   }
 }

@@ -5,6 +5,19 @@ import { axiosInstance } from "../lib/axios";
 import { useAuthStore } from "./useAuthStore";
 import toast from "react-hot-toast";
 
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = `${base64String}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; i += 1) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+
+  return outputArray;
+}
+
 export const useChatStore = create(
   persist(
     (set, get) => ({
@@ -24,6 +37,7 @@ export const useChatStore = create(
       isSoundEnabled: true,
       isSendingMedia: false,
       hasRequestedNotifications: false,
+      hasRegisteredPushSubscription: false,
 
       getUsers: async () => {
         set({ isUsersLoading: true });
@@ -60,7 +74,9 @@ export const useChatStore = create(
         set({ isMessagesLoading: true });
         try {
           const res = await axiosInstance.get(`/messages/${userId}`);
-          set({ messages: res.data });
+          if (String(get().activeConversationId) === String(userId)) {
+            set({ messages: res.data });
+          }
           get().getConversations();
         } catch (error) {
           toast.error(error.response?.data?.message || "Failed to load messages");
@@ -164,7 +180,7 @@ export const useChatStore = create(
             state.users.find((user) => user._id === activeConversationId) ||
             state.conversations.find((user) => user._id === activeConversationId) ||
             null,
-          messages: activeConversationId ? state.messages : [],
+          messages: activeConversationId === state.activeConversationId ? state.messages : [],
         }));
       },
 
@@ -182,13 +198,43 @@ export const useChatStore = create(
         }
       },
 
+      registerPushSubscription: async () => {
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+        if (!import.meta.env.VITE_VAPID_PUBLIC_KEY) return;
+
+        try {
+          const registration = await navigator.serviceWorker.ready;
+          let subscription = await registration.pushManager.getSubscription();
+
+          if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(import.meta.env.VITE_VAPID_PUBLIC_KEY),
+            });
+          }
+
+          await axiosInstance.post("/messages/push-subscription", subscription.toJSON());
+          set({ hasRegisteredPushSubscription: true });
+        } catch (error) {
+          console.warn("Push subscription registration failed:", error);
+        }
+      },
+
       requestNotificationPermission: async () => {
-        if (!("Notification" in window) || Notification.permission !== "default") return;
-        if (get().hasRequestedNotifications) return;
+        if (!("Notification" in window)) return;
+
+        if (Notification.permission === "granted") {
+          await get().registerPushSubscription();
+          return;
+        }
+
+        if (Notification.permission !== "default" || get().hasRequestedNotifications) return;
 
         set({ hasRequestedNotifications: true });
         try {
-          await Notification.requestPermission();
+          const permission = await Notification.requestPermission();
+          if (permission === "granted") await get().registerPushSubscription();
         } catch {
           // The browser can block permission prompts until a user gesture.
         }
@@ -271,6 +317,7 @@ export const useChatStore = create(
       name: "imessage-storage",
       partialize: (state) => ({
         hasRequestedNotifications: state.hasRequestedNotifications,
+        hasRegisteredPushSubscription: state.hasRegisteredPushSubscription,
         isSoundEnabled: state.isSoundEnabled,
       }),
     },

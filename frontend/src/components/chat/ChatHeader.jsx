@@ -1,5 +1,6 @@
 import { Avatar, Button } from "@heroui/react";
-import { ChevronLeftIcon, Volume2Icon, VolumeXIcon, XIcon } from "lucide-react";
+import { ChevronLeftIcon, MoreVerticalIcon, Volume2Icon, VolumeXIcon, XIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { AppLogo } from "../AppLogo";
 import { AvatarWithOnlineIndicator } from "./AvatarWithOnlineIndicator";
 
@@ -13,14 +14,27 @@ import { useSelectedConversation } from "../../hooks/useSelectedConversation";
 import { formatLastSeen } from "../../lib/utils";
 
 export function ChatHeader() {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const mobileMenuRef = useRef(null);
   const isSoundEnabled = useChatStore((state) => state.isSoundEnabled);
   const setActiveConversationId = useChatStore((state) => state.setActiveConversationId);
   const setSoundEnabled = useChatStore((state) => state.setSoundEnabled);
 
   const { activeConversation, isLargeScreen } = useSelectedConversation();
 
+  useEffect(() => {
+    if (!isMobileMenuOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!mobileMenuRef.current?.contains(event.target)) setIsMobileMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [isMobileMenuOpen]);
+
   return (
-    <header className="sticky top-0 z-10 flex shrink-0 flex-wrap items-center gap-1 border-b border-border px-1.5 py-1.5 sm:gap-2 sm:px-2 sm:py-2">
+    <header className="sticky top-0 z-10 flex shrink-0 items-center gap-1 border-b border-border px-1.5 py-[max(0.375rem,env(safe-area-inset-top))] sm:gap-2 sm:px-2 sm:py-2">
       {activeConversation && !isLargeScreen ? (
         <Button
           variant="ghost"
@@ -71,35 +85,77 @@ export function ChatHeader() {
         </div>
       )}
 
-      <div className="ml-auto flex max-w-full shrink-0 items-center justify-end gap-0.5 rounded-full bg-surface/70 px-1 py-0.5 sm:gap-1 sm:bg-transparent sm:px-0 sm:py-0">
-        <div className="hidden min-[460px]:contents">
+      <div className="ml-auto flex max-w-full shrink-0 items-center justify-end gap-0.5 sm:gap-1">
+        <div className="hidden sm:contents">
           <WallpaperPicker />
           <ThemePresetPicker />
+
+          <ThemeToggle />
+
+          <Button
+            variant="ghost"
+            size="sm"
+            isIconOnly
+            className="size-8 shrink-0 sm:size-9"
+            aria-pressed={isSoundEnabled}
+            onPress={() => setSoundEnabled(!isSoundEnabled)}
+          >
+            {isSoundEnabled ? (
+              <Volume2Icon className="size-5.5" strokeWidth={2} aria-hidden />
+            ) : (
+              <VolumeXIcon className="size-5.5" strokeWidth={2} aria-hidden />
+            )}
+          </Button>
         </div>
 
-        <ThemeToggle />
+        <div ref={mobileMenuRef} className="relative sm:hidden">
+          <Button
+            variant="ghost"
+            size="sm"
+            isIconOnly
+            className="size-8 shrink-0"
+            aria-label="Chat options"
+            onPress={() => setIsMobileMenuOpen((open) => !open)}
+          >
+            <MoreVerticalIcon className="size-5" strokeWidth={2} aria-hidden />
+          </Button>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          isIconOnly
-          className="size-8 shrink-0 sm:size-9"
-          aria-pressed={isSoundEnabled}
-          onPress={() => setSoundEnabled(!isSoundEnabled)}
-        >
-          {isSoundEnabled ? (
-            <Volume2Icon className="size-5.5" strokeWidth={2} aria-hidden />
-          ) : (
-            <VolumeXIcon className="size-5.5" strokeWidth={2} aria-hidden />
-          )}
-        </Button>
+          {isMobileMenuOpen ? (
+            <div className="absolute right-0 top-10 z-30 w-44 rounded-2xl border border-border bg-background p-2 shadow-2xl">
+              <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5">
+                <span className="text-sm font-medium">Backdrop</span>
+                <WallpaperPicker />
+              </div>
+              <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5">
+                <span className="text-sm font-medium">Accent</span>
+                <ThemePresetPicker />
+              </div>
+              <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5">
+                <span className="text-sm font-medium">Theme</span>
+                <ThemeToggle />
+              </div>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-2 rounded-xl px-2 py-2 text-left text-sm font-medium hover:bg-surface"
+                onClick={() => setSoundEnabled(!isSoundEnabled)}
+              >
+                Sound
+                {isSoundEnabled ? (
+                  <Volume2Icon className="size-5" strokeWidth={2} aria-hidden />
+                ) : (
+                  <VolumeXIcon className="size-5" strokeWidth={2} aria-hidden />
+                )}
+              </button>
+            </div>
+          ) : null}
+        </div>
 
         {activeConversation ? (
           <Button
             variant="ghost"
             size="sm"
             isIconOnly
-            className="size-8 shrink-0 sm:size-9"
+            className="hidden size-8 shrink-0 sm:flex sm:size-9"
             aria-label="Close chat"
             onPress={() => setActiveConversationId(null)}
           >
