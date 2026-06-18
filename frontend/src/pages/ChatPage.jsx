@@ -75,11 +75,34 @@ function ChatPage() {
     getMessages(activeConversationId);
   }, [getMessages, activeConversationId]);
 
+  useEffect(() => {
+    const setChatViewportHeight = () => {
+      const visualViewport = window.visualViewport;
+      const viewportHeight = visualViewport?.height || window.innerHeight;
+      const viewportTop = visualViewport?.offsetTop || 0;
+      document.documentElement.style.setProperty("--chat-viewport-height", `${viewportHeight}px`);
+      document.documentElement.style.setProperty("--chat-viewport-top", `${viewportTop}px`);
+    };
+
+    setChatViewportHeight();
+    window.visualViewport?.addEventListener("resize", setChatViewportHeight);
+    window.visualViewport?.addEventListener("scroll", setChatViewportHeight);
+    window.addEventListener("resize", setChatViewportHeight);
+
+    return () => {
+      window.visualViewport?.removeEventListener("resize", setChatViewportHeight);
+      window.visualViewport?.removeEventListener("scroll", setChatViewportHeight);
+      window.removeEventListener("resize", setChatViewportHeight);
+      document.documentElement.style.removeProperty("--chat-viewport-height");
+      document.documentElement.style.removeProperty("--chat-viewport-top");
+    };
+  }, []);
+
   return (
     <div
       /* 🔒 LOCKED VIEWPORT: Uses fixed position combined with h-[100dvh] ONLY inside the chat workspace container.
          This blocks the chat page from jumping or scrolling out of alignment when keyboards trigger */
-      className="fixed inset-0 h-[100dvh] w-screen flex flex-col overflow-hidden p-0 sm:p-3 md:p-8 select-none"
+      className="chat-page-shell fixed inset-x-0 top-0 flex w-screen flex-col overflow-hidden p-0 sm:p-3 md:p-8 select-none"
       style={frameStyle}
     >
       <div className="mx-auto flex h-full w-full max-w-6xl flex-1 overflow-hidden border border-border bg-background text-foreground sm:rounded-2xl">

@@ -209,6 +209,40 @@ export async function deleteMessage(req, res) {
   }
 }
 
+export async function updateMessage(req, res) {
+  try {
+    const { id: messageId } = req.params;
+    const userId = req.user._id;
+    const text = req.body?.text?.trim();
+
+    if (!text) {
+      return res.status(400).json({ message: "Message text is required" });
+    }
+
+    const message = await Message.findOne({ _id: messageId, senderId: userId });
+
+    if (!message) {
+      return res.status(404).json({ message: "You can only edit messages you sent" });
+    }
+
+    message.text = text;
+    message.editedAt = new Date();
+    await message.save();
+    await message.populate("replyTo", "senderId receiverId text image video createdAt");
+
+    [message.senderId, message.receiverId].forEach((participantId) => {
+      getReceiverSocketIds(participantId).forEach((socketId) => {
+        io.to(socketId).emit("messageEdited", message);
+      });
+    });
+
+    res.status(200).json(message);
+  } catch (error) {
+    console.error("Error in updateMessage:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+}
+
 export async function savePushSubscription(req, res) {
   try {
     const { endpoint, expirationTime = null, keys } = req.body || {};

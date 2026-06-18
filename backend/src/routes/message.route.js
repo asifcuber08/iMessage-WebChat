@@ -6,6 +6,7 @@ import {
   getUsersForSidebar,
   savePushSubscription,
   sendMessage,
+  updateMessage,
 } from "../controllers/message.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 import { upload } from "../middleware/upload.middleware.js";
@@ -19,6 +20,7 @@ router.get("/conversations", getConversationsForSidebar);
 router.post("/push-subscription", savePushSubscription);
 router.get("/:id", getMessages);
 router.post("/send/:id", upload.single("media"), sendMessage);
+router.patch("/:id", updateMessage);
 router.delete("/:id", deleteMessage);
 
 export default router;

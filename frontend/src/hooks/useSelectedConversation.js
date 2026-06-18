@@ -43,6 +43,7 @@ function mapUserToConversation({ user, messages, authUser, onlineUsers }) {
     role: String(message.senderId) === String(authUser?._id) ? "me" : "them",
     text: message.text || "",
     time: formatMessageTime(message.createdAt),
+    isEdited: Boolean(message.editedAt),
     imageUrl: message.image,
     videoUrl: message.video,
     replyTo: mapReplyPreview(message.replyTo),

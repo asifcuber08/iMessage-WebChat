@@ -33,7 +33,7 @@ export function ThemePresetPicker() {
 
             <Modal.Body className="isolate pt-4">
               <p className="mb-4 text-sm text-zinc-400">
-                HeroUI components use the accent color for primary actions and focus.
+                Select the color to see the change in theme.
               </p>
               <div className="grid grid-cols-3 gap-4 sm:grid-cols-4">
                 {HERO_UI_THEME_PRESETS.map((p) => {

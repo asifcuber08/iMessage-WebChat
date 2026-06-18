@@ -56,7 +56,7 @@ export async function sendMessagePushNotification({
     title: sender?.fullName || "New message",
     body: getMessageBody(message),
     icon: getAbsoluteIconUrl(sender?.profilePic), 
-    badge: "/favicon.svg",
+    badge: "/notification-badge.png",
     tag: `message-${message.senderId}`,
     url: "/",
     senderId: String(message.senderId),

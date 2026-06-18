@@ -19,7 +19,7 @@ self.addEventListener("push", (event) => {
   const options = {
     body: payload.body || "Open iMessage to read it.",
     icon: payload.icon || "/logo.png",
-    badge: payload.badge || "/favicon.svg",
+    badge: payload.badge || "/notification-badge.png",
     tag: payload.tag || "new-message",
     renotify: true,
     vibrate: [200, 100, 200], // 🌟 FIXED: Added standard mobile device vibration pattern values array

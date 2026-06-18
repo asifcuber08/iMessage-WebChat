@@ -101,6 +101,11 @@ body,
   padding: 0;
 }
 
+.chat-page-shell {
+  top: var(--chat-viewport-top, 0px);
+  height: var(--chat-viewport-height, 100dvh);
+}
+
 @media (max-width: 768px) {
   /* Keeps the mobile three-dot icons fully visible on touchscreens */
   .max-sm\:opacity-45 {

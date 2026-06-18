@@ -143,12 +143,23 @@ export const useChatStore = create(
           }));
           get().getConversations();
         });
+
+        socket.off("messageEdited");
+        socket.on("messageEdited", (editedMessage) => {
+          set((state) => ({
+            messages: state.messages.map((message) =>
+              String(message._id) === String(editedMessage._id) ? editedMessage : message,
+            ),
+          }));
+          get().getConversations();
+        });
       },
 
       unsubscribeFromMessages: () => {
         const socket = useAuthStore.getState().socket;
         socket?.off("newMessage");
         socket?.off("messageDeleted");
+        socket?.off("messageEdited");
       },
 
       subscribeToTyping: () => {
@@ -194,6 +205,22 @@ export const useChatStore = create(
           return true;
         } catch (error) {
           toast.error(error.response?.data?.message || "Failed to delete message");
+          return false;
+        }
+      },
+
+      editMessage: async (messageId, text) => {
+        try {
+          const res = await axiosInstance.patch(`/messages/${messageId}`, { text });
+          set((state) => ({
+            messages: state.messages.map((message) =>
+              String(message._id) === String(messageId) ? res.data : message,
+            ),
+          }));
+          get().getConversations();
+          return true;
+        } catch (error) {
+          toast.error(error.response?.data?.message || "Failed to edit message");
           return false;
         }
       },
@@ -250,7 +277,8 @@ export const useChatStore = create(
         const title = sender?.fullName || "New message";
         const body = message.text || (message.image ? "Photo" : message.video ? "Video" : "Message");
 
-        const fallbackNotification = () => new Notification(title, { body, icon: "/logo.png" });
+        const fallbackNotification = () =>
+          new Notification(title, { body, icon: "/logo.png", badge: "/notification-badge.png" });
 
         if (!navigator.serviceWorker?.ready) {
           fallbackNotification();
@@ -262,7 +290,7 @@ export const useChatStore = create(
             registration.showNotification(title, {
               body,
               icon: "/logo.png",
-              badge: "/favicon.svg",
+              badge: "/notification-badge.png",
               tag: `message-${message.senderId}`,
               data: { url: "/" },
             }),

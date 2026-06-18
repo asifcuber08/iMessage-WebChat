@@ -31,6 +31,9 @@ const messageSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
+    editedAt: {
+      type: Date,
+    },
   },
   { timestamps: true },
 );

@@ -204,7 +204,6 @@ export function ChatComposer() {
           placeholder="iMessage"
           rows={1}
           value={composerText}
-          disabled={isSendingText}
           onChange={handleComposerTextChange}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
@@ -220,6 +219,7 @@ export function ChatComposer() {
           isIconOnly
           isDisabled={isSendingMedia || isSendingText || (!composerText.trim() && !pickedMedia)}
           onMouseDown={(event) => event.preventDefault()}
+          onPointerDown={(event) => event.preventDefault()}
           onPress={handleSend}
         >
           <SendHorizontalIcon className="size-5" />

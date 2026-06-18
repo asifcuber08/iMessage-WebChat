@@ -1,5 +1,5 @@
 import { Button } from "@heroui/react";
-import { CornerUpLeftIcon, MoreVerticalIcon, Trash2Icon } from "lucide-react";
+import { CornerUpLeftIcon, MoreVerticalIcon, PencilIcon, Trash2Icon } from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { withTransform } from "../../lib/imagekit";
 import { MessageVideo } from "./MessageVideo";
@@ -7,7 +7,7 @@ import { MessageVideo } from "./MessageVideo";
 // Compress + size images for the bubble (q-auto works for images; f-auto picks WebP/AVIF).
 const IMAGE_TRANSFORM = "q-auto,w-640,f-auto";
 
-export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHighlighted }) {
+export function MessageBubble({ message, onDelete, onEdit, onReply, onJumpToReply, isHighlighted }) {
   const isOwnMessage = message.role === "me";
   const hasImage = Boolean(message.imageUrl);
   const hasVideo = Boolean(message.videoUrl);
@@ -18,6 +18,7 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
 
   const handleReply = () => onReply?.(message);
   const handleDelete = () => onDelete?.(message);
+  const handleEdit = () => onEdit?.(message);
 
   const handleTouchStart = (event) => {
     const touch = event.touches[0];
@@ -100,7 +101,7 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
         } ${isHighlighted ? "ring-2 ring-warning ring-offset-2 ring-offset-background" : ""}`}
       >
         {/* Actions Dropdown Menu sitting INSIDE the bubble layout framework */}
-        <div ref={menuRef} className="absolute right-1.5 top-1.5 z-10 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 max-sm:opacity-45">
+        <div ref={menuRef} className="absolute right-1.5 top-1.5 z-30 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 max-sm:opacity-45">
           <Button
             variant="light"
             size="sm"
@@ -117,8 +118,9 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
 
           {isMenuOpen ? (
             <div
-              className="absolute right-0 top-7 z-20 min-w-32 rounded-xl border border-border bg-background p-1 shadow-xl text-foreground"
+              className="pointer-events-auto absolute right-0 top-7 z-50 min-w-36 rounded-xl border border-border bg-white p-1 text-foreground shadow-2xl dark:bg-zinc-950"
               onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
@@ -133,17 +135,30 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
               </button>
               
               {isOwnMessage ? (
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium text-danger hover:bg-danger-50"
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    handleDelete();
-                  }}
-                >
-                  <Trash2Icon className="size-3.5" strokeWidth={2} />
-                  Delete
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium hover:bg-content2"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      handleEdit();
+                    }}
+                  >
+                    <PencilIcon className="size-3.5" strokeWidth={2} />
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium text-danger hover:bg-danger-50"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      handleDelete();
+                    }}
+                  >
+                    <Trash2Icon className="size-3.5" strokeWidth={2} />
+                    Delete
+                  </button>
+                </>
               ) : null}
             </div>
           ) : null}
@@ -198,6 +213,7 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
           }`}
         >
           {message.time}
+          {message.isEdited ? " edited" : ""}
         </p>
       </div>
     </div>

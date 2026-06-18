@@ -10,6 +10,7 @@ export function MessageList() {
   const { activeConversation, activeConversationId } =
     useSelectedConversation();
   const deleteMessage = useChatStore((state) => state.deleteMessage);
+  const editMessage = useChatStore((state) => state.editMessage);
   const isMessagesLoading = useChatStore((state) => state.isMessagesLoading);
   const setReplyingTo = useChatStore((state) => state.setReplyingTo);
   const messageRefs = useRef(new Map());
@@ -32,6 +33,16 @@ export function MessageList() {
     if (!shouldDelete) return;
 
     await deleteMessage(message.id);
+  };
+
+  const handleEdit = async (message) => {
+    if (message.role !== "me") return;
+    const nextText = window.prompt("Edit message", message.text);
+    if (nextText === null) return;
+    const trimmedText = nextText.trim();
+    if (!trimmedText || trimmedText === message.text) return;
+
+    await editMessage(message.id, trimmedText);
   };
 
   const handleJumpToReply = (messageId) => {
@@ -62,6 +73,7 @@ export function MessageList() {
               <MessageBubble
                 message={message}
                 onDelete={handleDelete}
+                onEdit={handleEdit}
                 onReply={setReplyingTo}
                 onJumpToReply={handleJumpToReply}
                 isHighlighted={highlightedMessageId === String(message.id)}
