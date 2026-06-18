@@ -35,11 +35,11 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
     // Two-way mobile swiping logic (Horizontal movement tracking inside bubble card)
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       if (isOwnMessage && deltaX < 0) {
-        // 🌟 UPDATED: Swipe LEFT (negative deltaX) to reply to your own messages
+        // Swipe LEFT (negative deltaX) to reply to your own messages
         didSwipeRef.current = Math.abs(deltaX) > 12;
         setDragOffset(Math.max(deltaX, -72)); // Negative shifts layout left
       } else if (!isOwnMessage && deltaX > 0) {
-        // 🌟 UPDATED: Swipe RIGHT (positive deltaX) to reply to incoming messages
+        // Swipe RIGHT (positive deltaX) to reply to incoming messages
         didSwipeRef.current = deltaX > 12;
         setDragOffset(Math.min(deltaX, 72)); // Positive shifts layout right
       }
@@ -93,7 +93,6 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchMoveEnd}
         style={{ transform: dragOffset ? `translateX(${dragOffset}px)` : undefined }}
-        // 🌟 FIXED: Kept min-w-[90px] so short text data string inputs never squeeze dropdown boxes out of view
         className={`relative min-w-[90px] max-w-[min(86%,28rem)] rounded-2xl px-3 pb-1.5 pt-2 text-[15px] leading-snug transition-[background-color,box-shadow,transform] sm:max-w-[min(75%,28rem)] sm:px-3.5 ${
           isOwnMessage
             ? "rounded-br-md bg-accent text-accent-foreground"
@@ -117,7 +116,6 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
           </Button>
 
           {isMenuOpen ? (
-            /* 🌟 FIXED: Closed structural truncated layout div parameter tags properly */
             <div
               className="absolute right-0 top-7 z-20 min-w-32 rounded-xl border border-border bg-background p-1 shadow-xl text-foreground"
               onClick={(e) => e.stopPropagation()}

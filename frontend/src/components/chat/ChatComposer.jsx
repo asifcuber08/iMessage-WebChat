@@ -23,7 +23,7 @@ export function ChatComposer() {
   const typingTimeoutRef = useRef(null);
   const [pickedMedia, setPickedMedia] = useState(null);
 
-  // 🌟 NEW: Local lock state to stop rapid text double-clicks
+  // Local lock state to stop rapid text double-clicks
   const [isSendingText, setIsSendingText] = useState(false);
 
   useEffect(() => {
@@ -46,15 +46,9 @@ export function ChatComposer() {
     if (isSoundEnabled) playRandomKeyStrokeSound();
   };
 
-  const focusComposer = () => {
-    composerRootRef.current?.querySelector("textarea")?.focus({ preventScroll: true });
-  };
-
-   const handleSend = async () => {
+  const handleSend = async () => {
     // LOCK: If a text message or a media file is already uploading, skip execution!
     if (isSendingText || isSendingMedia) return;
-
-    // Safety fallback: if no content to send, do nothing
     if (!composerText.trim() && !pickedMedia) return;
 
     try {
@@ -189,7 +183,7 @@ export function ChatComposer() {
           type="file"
           accept="image/*,video/*"
           className="sr-only"
-          disabled={isSendingMedia || isSendingText} // 🌟 Disabled input if transit is processing
+          disabled={isSendingMedia || isSendingText}
           tabIndex={-1}
           aria-hidden
           onChange={handleMediaPick}
@@ -197,7 +191,7 @@ export function ChatComposer() {
         <Button
           variant="ghost"
           isIconOnly
-          isDisabled={isSendingMedia || isSendingText} // 🌟 Blocks file uploads during text delivery
+          isDisabled={isSendingMedia || isSendingText}
           className="size-9 shrink-0 touch-manipulation self-end text-accent"
           onPress={() => mediaInputRef.current?.click()}
         >
@@ -209,7 +203,7 @@ export function ChatComposer() {
           placeholder="iMessage"
           rows={1}
           value={composerText}
-          disabled={isSendingText} // 🌟 Optional: freezes writing when input fires
+          disabled={isSendingText}
           onChange={handleComposerTextChange}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
@@ -223,16 +217,11 @@ export function ChatComposer() {
         <Button
           variant="primary"
           isIconOnly
-          // 🌟 UPDATED: Disable the button completely if it's already sending text or media
           isDisabled={isSendingMedia || isSendingText || (!composerText.trim() && !pickedMedia)}
           onMouseDown={(event) => event.preventDefault()}
           onPress={handleSend}
         >
-          {isSendingText ? (
-            <LoaderIcon className="size-5 animate-spin" /> // Shows a mini loader icon on the button text
-          ) : (
-            <SendHorizontalIcon className="size-5" />
-          )}
+          <SendHorizontalIcon className="size-5" />
         </Button>
       </div>
     </footer>
