@@ -90,20 +90,20 @@
   }
 }
 
-/* 🔒 CRUCIAL MOBILE VIEWPORT LOCK: Hard locks the parent document viewport so mobile keyboards cannot shift layout headers */
+/* 🌟 FIXED: Allows your login and logout pages to scroll naturally on smartphones */
 html, 
-body, 
+body,
 #root {
-  height: 100vh;
-  height: -webkit-fill-available; /* Fills iOS screens perfectly around safari hardware panels */
-  width: 100vw;
-  overflow: hidden;
-  position: fixed; /* Prevents the window body layout canvas from bouncing or rolling upwards */
+  height: auto;
+  min-height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 
-/* Optimizes viewport margins on smartphone PWA screens */
 @media (max-width: 768px) {
-  :root {
-    viewport-fit: cover;
+  /* Keeps the mobile three-dot icons fully visible on touchscreens */
+  .max-sm\:opacity-45 {
+    opacity: 1 !important;
   }
 }

@@ -157,10 +157,10 @@ export function ChatHeader() {
 
           {isMobileMenuOpen ? (
             <div className="absolute right-0 top-10 z-50 w-44 rounded-2xl border border-border bg-background dark:bg-zinc-950 p-2 shadow-2xl backdrop-blur-md">
-              <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5">
+              {/* <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5">
                 <span className="text-sm font-medium">Backdrop</span>
                 <WallpaperPicker />
-              </div>
+              </div> */}
               <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5">
                 <span className="text-sm font-medium">Accent</span>
                 <ThemePresetPicker />
@@ -174,7 +174,7 @@ export function ChatHeader() {
                 className="flex w-full items-center justify-between gap-2 rounded-xl px-2 py-2 text-left text-sm font-medium hover:bg-content2"
                 onClick={() => setSoundEnabled(!isSoundEnabled)}
               >
-                Sound
+                Key Sound
                 {isSoundEnabled ? (
                   <Volume2Icon className="size-5" strokeWidth={2} aria-hidden />
                 ) : (
