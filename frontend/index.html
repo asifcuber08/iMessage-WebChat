@@ -7,9 +7,11 @@
     <link rel="apple-touch-icon" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
     
-    <!-- Dynamic status tracking tags we built earlier -->
-    <meta id="theme-meta" name="theme-color" content="#ffffff" />
-    <meta id="ios-meta" name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- 🟢 FIXED: Hardcoded solid black layout preset background for Android and Chrome PWA wrappers -->
+    <meta id="theme-meta" name="theme-color" content="#000000" />
+    
+    <!-- 🟢 FIXED: Tells iOS Safari to keep the phone clock, battery, and signal metrics crisp white -->
+    <meta id="ios-meta" name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     
     <!-- 🍏 iPhone Standalone App Settings -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -88,12 +90,10 @@
     <!-- The Animated Custom Branding Layout Container -->
     <div id="pwa-splash">
       <div class="splash-center"> 
-        <!-- 🟢 FIXED: Changed className to standard HTML class attribute so the 48px size loads! -->
         <img src="/logo.png" alt="App Logo" class="splash-logo" />
         <h1 class="splash-name">iMessage ChatApp</h1>
       </div>
       <div class="splash-footer"> 
-        <!-- 🟢 FIXED: Changed className to standard HTML class attributes -->
         <p class="owner-tag">Created by Asif Shamim</p>
         <p class="copyright-tag">© 2026 All Rights Reserved</p>
       </div>

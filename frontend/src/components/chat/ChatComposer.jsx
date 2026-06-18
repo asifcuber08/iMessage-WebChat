@@ -50,8 +50,8 @@ export function ChatComposer() {
     composerRootRef.current?.querySelector("textarea")?.focus({ preventScroll: true });
   };
 
-  const handleSend = async () => {
-    // 🌟 LOCK: If a text message or a media file is already uploading, skip execution!
+   const handleSend = async () => {
+    // LOCK: If a text message or a media file is already uploading, skip execution!
     if (isSendingText || isSendingMedia) return;
 
     // Safety fallback: if no content to send, do nothing
@@ -59,7 +59,7 @@ export function ChatComposer() {
 
     try {
       if (!pickedMedia) {
-        setIsSendingText(true); // 🌟 TURN LOCK ON: Instantly blocks rapid duplicate text clicks
+        setIsSendingText(true); // TURN LOCK ON: Instantly blocks rapid duplicate text clicks
       }
 
       const didSendMessage = pickedMedia
@@ -76,11 +76,14 @@ export function ChatComposer() {
       }
 
       if (didSendMessage) playSoundIfEnabled();
-      requestAnimationFrame(focusComposer);
+      
+      // 🟢 FIXED: Removed requestAnimationFrame(focusComposer);
+      // Deleting this line ensures your phone's native virtual keyboard STAYS OPEN when you press send!
+      
     } catch (error) {
       console.error("Failed to route message:", error);
     } finally {
-      setIsSendingText(false); // 🌟 TURN LOCK OFF: Safely re-opens the composer for the next chat message
+      setIsSendingText(false); // TURN LOCK OFF: Safely re-opens the composer for the next chat message
     }
   };
 

@@ -22,13 +22,13 @@ function getMessageBody(message) {
   return "Sent a message";
 }
 
-// 🌟 NEW CODES HELPER: Converts relative routes into absolute production URLs for mobile downloads
+// 🌟 FIXED CODES HELPER: Converts relative paths into global absolute URLs for full-color background notification downloads
 function getAbsoluteIconUrl(avatarUrl) {
-  // If your live deployment uses a custom domain or Render link, fetch it from backend environment
-  const liveOrigin = process.env.FRONTEND_URL || "https://onrender.com"; // 🌟 Change this string placeholder to match your exact live Render web address!
+  // 🌟 CHANGE THIS URL string format placeholder to match your exact live Render app domain name address!
+  const liveOrigin = process.env.FRONTEND_URL || "https://imessage-webchat.onrender.com"; 
 
   if (!avatarUrl) {
-    return `${liveOrigin}/logo.png`;
+    return `${liveOrigin}/logo.png`; // 🟢 Points your phone to your crisp full-color icon asset file
   }
 
   // If the user's avatar path is already a global link (like Clerk or imagekit), pass it directly
