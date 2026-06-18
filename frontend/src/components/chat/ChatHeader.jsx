@@ -53,8 +53,8 @@ export function ChatHeader() {
   }, [isMobileMenuOpen]);
 
   return (
-    /* 🌟 FIXED: Swapped 'sticky' out for an explicit absolute positional grid constraint layout barrier */
-    <header className="absolute top-0 left-0 right-0 w-full h-[52px] sm:h-14 z-40 flex shrink-0 items-center gap-1 border-b border-border bg-background px-1.5 py-[max(0.375rem,env(safe-area-inset-top))] sm:gap-2 sm:px-2 sm:py-2">
+    /* 🌟 FIXED VIEWPORT LOCK: Swapped 'absolute' out for an explicit 'fixed' positioning layer to freeze header positions entirely */
+    <header className="fixed top-0 left-0 right-0 w-full h-[52px] sm:h-14 z-40 flex shrink-0 items-center gap-1 border-b border-border bg-background px-1.5 py-[max(0.375rem,env(safe-area-inset-top))] sm:gap-2 sm:px-2 sm:py-2">
       {activeConversation && !isLargeScreen ? (
         <Button
           variant="ghost"
@@ -84,13 +84,13 @@ export function ChatHeader() {
           </AvatarWithOnlineIndicator>
 
           <div className="flex-1 text-center sm:text-left min-w-0">
-            {/* 🌟 UPDATED: Created a clean layout wrapper to securely align your verification badge next to your text name */}
+            {/* Created a clean layout wrapper to securely align your verification badge next to your text name */}
             <div className="flex items-center gap-1 justify-center sm:justify-start">
               <p className="truncate text-[15px] font-semibold leading-tight">
                 {activeConversation.peer.name}
               </p>
               
-              {/* 🌟 NEW: Dynamic Verification Checkmark Indicator */}
+              {/* Dynamic Verification Checkmark Indicator */}
               {(activeConversation.peer.email === "asifshamim12816@gmail.com" || 
                 activeConversation.peer.clerkId === "user_3FH4dwtSKq5uZZczcXUnMbDUHDB") && (
                 <span className="inline-flex items-center justify-center size-3.5 rounded-full bg-sky-500 text-white shadow-sm shrink-0">
@@ -159,10 +159,10 @@ export function ChatHeader() {
 
           {isMobileMenuOpen ? (
             <div className="absolute right-0 top-10 z-50 w-44 rounded-2xl border border-border bg-background dark:bg-zinc-950 p-2 shadow-2xl backdrop-blur-md">
-              <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5">
+              {/* <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5">
                 <span className="text-sm font-medium">Backdrop</span>
                 <WallpaperPicker />
-              </div>
+              </div> */}
               <div className="flex items-center justify-between gap-2 rounded-xl px-2 py-1.5">
                 <span className="text-sm font-medium">Accent</span>
                 <ThemePresetPicker />
@@ -187,6 +187,7 @@ export function ChatHeader() {
           ) : null}
         </div>
 
+        {/* 🌟 FIXED: Repaired truncated component snippet block layout parameters cleanly */}
         {activeConversation ? (
           <Button
             variant="ghost"

@@ -22,27 +22,24 @@ function getMessageBody(message) {
   return "Sent a message";
 }
 
-// 🌟 NEW CODES HELPER: Converts relative routes into absolute production URLs for mobile downloads
+// 🌟 NEW HELPER: Forces relative image assets to convert to absolute internet links for mobile notification downloads
 function getAbsoluteIconUrl(avatarUrl) {
-  // If your live deployment uses a custom domain or Render link, fetch it from backend environment
-  const liveOrigin = process.env.FRONTEND_URL || "https://onrender.com"; // 🌟 Change this string placeholder to match your exact live Render web address!
+  // 🌟 CRUCIAL: Replace the URL inside these quotes with your true live Render frontend website link!
+  const liveProductionUrl = process.env.FRONTEND_URL || "https://onrender.com";
 
   if (!avatarUrl) {
-    return `${liveOrigin}/logo.png`;
+    return `${liveProductionUrl}/logo.png`; // 🟢 Points phone to your crisp full-color site logo asset
   }
 
-  // If the user's avatar path is already a global link (like Clerk or imagekit), pass it directly
   if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
-    // If it's on ImageKit, force a circular radius crop so it looks like WhatsApp
     if (avatarUrl.includes("ik.imagekit.io")) {
       const separator = avatarUrl.includes("?") ? "&" : "?";
-      return `${avatarUrl}${separator}tr=w-192,h-192,fo-face,r-max`;
+      return `${avatarUrl}${separator}tr=w-192,h-192,fo-face,r-max`; // Circles avatars like WhatsApp
     }
     return avatarUrl;
   }
 
-  // Otherwise append your production URL prefix context
-  return `${liveOrigin}${avatarUrl}`;
+  return `${liveProductionUrl}${avatarUrl}`;
 }
 
 export async function sendMessagePushNotification({
@@ -56,12 +53,11 @@ export async function sendMessagePushNotification({
   const subscriptions = receiver?.pushSubscriptions || [];
   if (!subscriptions.length) return;
 
-  // 🌟 FIXED: Passing fully qualified absolute web links so smartphones capture full color layout matrices
   const payload = JSON.stringify({
     title: sender?.fullName || "New message",
     body: getMessageBody(message),
-    icon: getAbsoluteIconUrl(sender?.profilePic), // 🟢 Forces full color website logo or circular profile pic
-    badge: "/favicon.svg", // This is the status bar stencil badge (system overrides this to solid white by law)
+    icon: getAbsoluteIconUrl(sender?.profilePic), // 🟢 FIXED: Sends full web links so mobile catches full color matrices
+    badge: "/favicon.svg",
     tag: `message-${message.senderId}`,
     url: "/",
     senderId: String(message.senderId),
@@ -82,7 +78,6 @@ export async function sendMessagePushNotification({
           staleEndpoints.push(subscription.endpoint);
           return;
         }
-
         console.error("Error sending push notification:", error.message);
       }
     }),

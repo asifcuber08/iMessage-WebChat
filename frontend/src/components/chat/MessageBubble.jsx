@@ -34,14 +34,14 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
 
     // Two-way mobile swiping logic (Horizontal movement tracking)
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (isOwnMessage && deltaX > 0) {
-        // Swipe RIGHT for your own messages
-        didSwipeRef.current = deltaX > 12;
-        setDragOffset(Math.min(deltaX, 72));
-      } else if (!isOwnMessage && deltaX < 0) {
-        // Swipe LEFT for incoming messages
+      if (isOwnMessage && deltaX < 0) {
+        // 🌟 UPDATED: Swipe LEFT (negative deltaX) to reply to your own messages
         didSwipeRef.current = Math.abs(deltaX) > 12;
         setDragOffset(Math.max(deltaX, -72)); // Negative shifts layout left
+      } else if (!isOwnMessage && deltaX > 0) {
+        // 🌟 UPDATED: Swipe RIGHT (positive deltaX) to reply to incoming messages
+        didSwipeRef.current = deltaX > 12;
+        setDragOffset(Math.min(deltaX, 72)); // Positive shifts layout right
       }
     }
   };
@@ -93,14 +93,13 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         style={{ transform: dragOffset ? `translateX(${dragOffset}px)` : undefined }}
-        // 🌟 LINE 75 AREA: Add min-w-[90px] right here inside this template string:
         className={`relative min-w-[90px] max-w-[min(86%,28rem)] rounded-2xl px-3 pb-1.5 pt-2 text-[15px] leading-snug transition-[background-color,box-shadow,transform] sm:max-w-[min(75%,28rem)] sm:px-3.5 ${
           isOwnMessage
             ? "rounded-br-md bg-accent text-accent-foreground"
             : "rounded-bl-md bg-surface"
         } ${isHighlighted ? "ring-2 ring-warning ring-offset-2 ring-offset-background" : ""}`}
       >
-        {/* 🌟 NEW: Actions Dropdown Menu sitting INSIDE the bubble layout framework */}
+        {/* Actions Dropdown Menu sitting INSIDE the bubble layout framework */}
         <div ref={menuRef} className="absolute right-1.5 top-1.5 z-10 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 max-sm:opacity-45">
           <Button
             variant="light"

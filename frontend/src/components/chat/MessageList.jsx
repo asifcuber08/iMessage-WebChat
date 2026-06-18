@@ -48,8 +48,8 @@ export function MessageList() {
       {activeConversation ? (
         <div
           ref={messagesScrollRef}
-          /* 🌟 UPDATED: Added pt-[60px] sm:pt-16 to make sure message bubbles clear the floating header block safely */
-          className="flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain px-2 pb-3 pt-[60px] sm:px-3 sm:pb-4 sm:pt-16"
+          /* 🌟 UPDATED: Perfected the top padding block offset to clear your locked header position boundaries cleanly */
+          className="flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain px-2 pb-3 pt-[56px] sm:px-3 sm:pb-4 sm:pt-16"
         >
           <p className="mb-3 text-center text-[11px] font-medium uppercase tracking-wide text-muted">
             Today

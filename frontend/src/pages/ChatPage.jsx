@@ -19,26 +19,22 @@ function ChatPage() {
   const subscribeToTyping = useChatStore((state) => state.subscribeToTyping);
   const unsubscribeFromMessages = useChatStore((state) => state.unsubscribeFromMessages);
   const unsubscribeFromTyping = useChatStore((state) => state.unsubscribeFromTyping);
-  const setActiveConversationId = useChatStore((state) => state.setActiveConversationId); // 🌟 Added setter action
+  const setActiveConversationId = useChatStore((state) => state.setActiveConversationId); 
   
   const onlineUsers = useAuthStore((state) => state.onlineUsers);
   const socket = useAuthStore((state) => state.socket);
 
   const { activeConversation, activeConversationId, isLargeScreen } = useSelectedConversation();
 
-  // 🌟 NEW: Mobile Hardware Back Button Router Hijack
+  // Mobile Hardware Back Button Router Hijack
   useEffect(() => {
-    // We only want this routing behavior running on small mobile screens
     if (isLargeScreen) return undefined;
 
     if (activeConversationId) {
-      // 1. Push a dummy navigation state into the history stack when a chat opens
       window.history.pushState({ chatActive: true }, "");
 
-      // 2. Intercept the hardware / gesture popstate back button trigger
       const handlePopState = (event) => {
         event.preventDefault();
-        // Reset the active conversation back to null to slide back to the user list row sidebar
         setActiveConversationId(null);
       };
 
@@ -87,15 +83,18 @@ function ChatPage() {
       <div className="mx-auto flex min-h-0 w-full max-w-6xl flex-1 overflow-hidden border border-border bg-background text-foreground sm:rounded-2xl">
         <ChatSidebar />
 
+        {/* 🌟 FIXED VIEWPORT LOCK CONTAINER: Uses clean layout constraints to anchor internal rows */}
         <div
-          className={`min-h-0 relative flex-1 flex-col overflow-hidden ${
+          className={`min-h-0 h-full relative flex-1 flex-col overflow-hidden ${
             !isLargeScreen && !activeConversationId ? "hidden lg:flex" : "flex"
           }`}
         >
-          <ChatHeader />
-          <MessageList />
-
-          {activeConversation ? <ChatComposer /> : null}
+          {/* Layout Layer: Groups Header, List and Input inside a locked vertical track */}
+          <div className="absolute inset-0 flex flex-col h-full w-full overflow-hidden">
+            <ChatHeader />
+            <MessageList />
+            {activeConversation ? <ChatComposer /> : null}
+          </div>
         </div>
       </div>
     </div>
