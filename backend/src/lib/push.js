@@ -22,9 +22,8 @@ function getMessageBody(message) {
   return "Sent a message";
 }
 
-// 🌟 CLEAN FIXED HELPER: Converts relative paths into global absolute URLs for full-color background notification downloads
+// 🌟 FIXED CODES HELPER: Properly encapsulated function block shell wrapper
 function getAbsoluteIconUrl(avatarUrl) {
-  // 🟢 Replace 'https://onrender.com' with your actual live Render frontend website link!
   const liveOrigin = process.env.FRONTEND_URL || "https://onrender.com"; 
 
   if (!avatarUrl) {
@@ -34,22 +33,12 @@ function getAbsoluteIconUrl(avatarUrl) {
   if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
     if (avatarUrl.includes("ik.imagekit.io")) {
       const separator = avatarUrl.includes("?") ? "&" : "?";
-      return `${avatarUrl}${separator}tr=w-192,h-192,fo-face,r-max`; // Circles avatars like WhatsApp
+      return `${avatarUrl}${separator}tr=w-192,h-192,fo-face,r-max`; 
     }
     return avatarUrl;
   }
 
   return `${liveOrigin}${avatarUrl}`;
-}
-  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
-    if (avatarUrl.includes("ik.imagekit.io")) {
-      const separator = avatarUrl.includes("?") ? "&" : "?";
-      return `${avatarUrl}${separator}tr=w-192,h-192,fo-face,r-max`; // Circles avatars like WhatsApp
-    }
-    return avatarUrl;
-  }
-
-  return `${liveProductionUrl}${avatarUrl}`;
 }
 
 export async function sendMessagePushNotification({
@@ -66,7 +55,7 @@ export async function sendMessagePushNotification({
   const payload = JSON.stringify({
     title: sender?.fullName || "New message",
     body: getMessageBody(message),
-    icon: getAbsoluteIconUrl(sender?.profilePic), // 🟢 FIXED: Sends full web links so mobile catches full color matrices
+    icon: getAbsoluteIconUrl(sender?.profilePic), 
     badge: "/favicon.svg",
     tag: `message-${message.senderId}`,
     url: "/",
