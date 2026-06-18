@@ -22,15 +22,25 @@ function getMessageBody(message) {
   return "Sent a message";
 }
 
-// 🌟 NEW HELPER: Forces relative image assets to convert to absolute internet links for mobile notification downloads
+// 🌟 CLEAN FIXED HELPER: Converts relative paths into global absolute URLs for full-color background notification downloads
 function getAbsoluteIconUrl(avatarUrl) {
-  // 🌟 CRUCIAL: Replace the URL inside these quotes with your true live Render frontend website link!
-  const liveProductionUrl = process.env.FRONTEND_URL || "https://onrender.com";
+  // 🟢 Replace 'https://onrender.com' with your actual live Render frontend website link!
+  const liveOrigin = process.env.FRONTEND_URL || "https://onrender.com"; 
 
   if (!avatarUrl) {
-    return `${liveProductionUrl}/logo.png`; // 🟢 Points phone to your crisp full-color site logo asset
+    return `${liveOrigin}/logo.png`; 
   }
 
+  if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
+    if (avatarUrl.includes("ik.imagekit.io")) {
+      const separator = avatarUrl.includes("?") ? "&" : "?";
+      return `${avatarUrl}${separator}tr=w-192,h-192,fo-face,r-max`; // Circles avatars like WhatsApp
+    }
+    return avatarUrl;
+  }
+
+  return `${liveOrigin}${avatarUrl}`;
+}
   if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
     if (avatarUrl.includes("ik.imagekit.io")) {
       const separator = avatarUrl.includes("?") ? "&" : "?";

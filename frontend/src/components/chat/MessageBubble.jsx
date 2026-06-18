@@ -32,21 +32,21 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
     const deltaX = touch.clientX - touchStartRef.current.x;
     const deltaY = touch.clientY - touchStartRef.current.y;
 
-    // Two-way mobile swiping logic (Horizontal movement tracking)
+    // Two-way mobile swiping logic (Horizontal movement tracking inside bubble card)
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       if (isOwnMessage && deltaX < 0) {
-        // 🌟 UPDATED: Swipe LEFT (negative deltaX) to reply to your own messages
+        // Swipe LEFT (negative deltaX) to reply to your own messages
         didSwipeRef.current = Math.abs(deltaX) > 12;
         setDragOffset(Math.max(deltaX, -72)); // Negative shifts layout left
       } else if (!isOwnMessage && deltaX > 0) {
-        // 🌟 UPDATED: Swipe RIGHT (positive deltaX) to reply to incoming messages
+        // Swipe RIGHT (positive deltaX) to reply to incoming messages
         didSwipeRef.current = deltaX > 12;
         setDragOffset(Math.min(deltaX, 72)); // Positive shifts layout right
       }
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchMoveEnd = () => {
     // Fire reply context if swiped far enough past threshold in either direction
     if (Math.abs(dragOffset) > 52) handleReply();
     touchStartRef.current = null;
@@ -91,7 +91,7 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
+        onTouchEnd={handleTouchMoveEnd}
         style={{ transform: dragOffset ? `translateX(${dragOffset}px)` : undefined }}
         className={`relative min-w-[90px] max-w-[min(86%,28rem)] rounded-2xl px-3 pb-1.5 pt-2 text-[15px] leading-snug transition-[background-color,box-shadow,transform] sm:max-w-[min(75%,28rem)] sm:px-3.5 ${
           isOwnMessage
@@ -108,7 +108,7 @@ export function MessageBubble({ message, onDelete, onReply, onJumpToReply, isHig
             className="size-6 min-w-6 text-current opacity-60 hover:opacity-100 rounded-full bg-black/5 dark:bg-white/5"
             aria-label="Message options"
             onClick={(e) => {
-              e.stopPropagation(); // Stops main bubble tap trigger from firing
+              e.stopPropagation(); // Stops main bubble tap trigger from firing code
               setIsMenuOpen((open) => !open);
             }}
           >
