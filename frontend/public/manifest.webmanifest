@@ -1,19 +1,19 @@
 {
-  "name": "iMessage WebChat",
+  "name": "iMessage By Asif Shamim",
   "short_name": "iMessage",
-  "description": "A realtime chat app with installable mobile support.",
+  "description": "A realtime chat app.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0b0b0f",
-  "theme_color": "#0a84ff",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "icons": [
     {
       "src": "/logo.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/logo.png",

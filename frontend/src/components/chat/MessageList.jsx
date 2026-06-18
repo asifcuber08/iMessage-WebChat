@@ -7,7 +7,8 @@ import { useSelectedConversation } from "../../hooks/useSelectedConversation";
 import { useChatStore } from "../../store/useChatStore";
 
 export function MessageList() {
-  const { activeConversation, activeConversationId } = useSelectedConversation();
+  const { activeConversation, activeConversationId } =
+    useSelectedConversation();
   const deleteMessage = useChatStore((state) => state.deleteMessage);
   const isMessagesLoading = useChatStore((state) => state.isMessagesLoading);
   const setReplyingTo = useChatStore((state) => state.setReplyingTo);
@@ -15,7 +16,10 @@ export function MessageList() {
   const [highlightedMessageId, setHighlightedMessageId] = useState(null);
 
   const lastMessageId = activeConversation?.messages.at(-1)?.id;
-  const messagesScrollRef = useScrollToBottom(activeConversationId, lastMessageId);
+  const messagesScrollRef = useScrollToBottom(
+    activeConversationId,
+    lastMessageId,
+  );
 
   const setMessageRef = useCallback((messageId, node) => {
     if (node) messageRefs.current.set(String(messageId), node);
@@ -40,17 +44,21 @@ export function MessageList() {
   };
 
   return (
-    <div className="relative flex flex-1 flex-col overflow-hidden">
+    <div className="relative flex flex-1 flex-col overflow-hidden w-full h-full">
       {activeConversation ? (
         <div
           ref={messagesScrollRef}
-          className="flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain px-2 py-3 sm:px-3 sm:py-4"
+          /* 🌟 UPDATED: Added pt-[60px] sm:pt-16 to make sure message bubbles clear the floating header block safely */
+          className="flex flex-1 flex-col gap-1 overflow-y-auto overscroll-contain px-2 pb-3 pt-[60px] sm:px-3 sm:pb-4 sm:pt-16"
         >
           <p className="mb-3 text-center text-[11px] font-medium uppercase tracking-wide text-muted">
             Today
           </p>
           {activeConversation.messages.map((message) => (
-            <div key={message.id} ref={(node) => setMessageRef(message.id, node)}>
+            <div
+              key={message.id}
+              ref={(node) => setMessageRef(message.id, node)}
+            >
               <MessageBubble
                 message={message}
                 onDelete={handleDelete}
@@ -67,7 +75,10 @@ export function MessageList() {
       {activeConversation && isMessagesLoading ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/55 backdrop-blur-[2px]">
           <div className="flex items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-medium shadow-lg">
-            <LoaderIcon className="size-4 animate-spin text-accent" strokeWidth={2} />
+            <LoaderIcon
+              className="size-4 animate-spin text-accent"
+              strokeWidth={2}
+            />
             Loading messages
           </div>
         </div>

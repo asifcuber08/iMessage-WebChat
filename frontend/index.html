@@ -5,15 +5,115 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0a84ff" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- Dynamic status tracking tags we built earlier -->
+    <meta id="theme-meta" name="theme-color" content="#ffffff" />
+    <meta id="ios-meta" name="apple-mobile-web-app-status-bar-style" content="default" />
+    
+    <!-- 🍏 iPhone Standalone App Settings -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-title" content="iMessage" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    
+    <!-- 🍏 iPhone Splash Screen Background Fallback Link -->
+    <link rel="apple-touch-startup-image" href="/logo.png" />
+
     <title>iMessage</title>
+    
+    <!-- Premium Splash Screen Styling for App Startup Loading Delays -->
+    <style>
+      #pwa-splash {
+        position: fixed;
+        inset: 0;
+        background-color: #0b0b0f; /* Deep dark premium background matching your app */
+        display: flex;
+        flex-direction: column; 
+        align-items: center;
+        justify-content: space-between;
+        z-index: 99999;
+        padding-top: 25vh;
+        padding-bottom: 8vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        color: #ffffff;
+        transition: opacity 0.5s ease, visibility 0.5s;
+      }
+      .splash-center {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+      .splash-logo {
+        width: 48px;  
+        height: 48px; 
+        border-radius: 12px; 
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        animation: splash-pulse 2s infinite ease-in-out;
+      }
+      .splash-name {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #ffffff 0%, #a1a1aa 100%);
+        -webkit-background-clip: text;
+        background-clip: text; 
+        -webkit-text-fill-color: transparent;
+      }
+      .splash-footer {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        opacity: 0.6;
+      }
+      .owner-tag {
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        color: #0a84ff; /* Apple Blue accent color highlighting your name */
+      }
+      .copyright-tag {
+        font-size: 11px;
+        color: #71717a;
+      }
+      @keyframes splash-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.04); opacity: 0.95; }
+      }
+    </style>
   </head>
   <body>
+    <!-- The Animated Custom Branding Layout Container -->
+    <div id="pwa-splash">
+      <div class="splash-center"> 
+        <!-- 🟢 FIXED: Changed className to standard HTML class attribute so the 48px size loads! -->
+        <img src="/logo.png" alt="App Logo" class="splash-logo" />
+        <h1 class="splash-name">iMessage ChatApp</h1>
+      </div>
+      <div class="splash-footer"> 
+        <!-- 🟢 FIXED: Changed className to standard HTML class attributes -->
+        <p class="owner-tag">Created by Asif Shamim</p>
+        <p class="copyright-tag">© 2026 All Rights Reserved</p>
+      </div>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Script to fade out the splash screen cleanly once React is completely loaded -->
+    <script>
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          const splash = document.getElementById('pwa-splash');
+          if (splash) {
+            splash.style.opacity = '0';
+            splash.style.visibility = 'hidden';
+            setTimeout(() => splash.remove(), 500);
+          }
+        }, 800); // Gives a beautiful, premium 800ms loading sequence display
+      });
+    </script>
   </body>
 </html>

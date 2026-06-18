@@ -2,15 +2,25 @@
 @import "@heroui/styles";
 @import "./styles/heroui-theme-presets.css";
 
+/* ☀️ LIGHT MODE PRESETS (When your app doesn't have the .dark class) */
 :root {
   --clerk-color-primary: var(--accent) !important;
   --clerk-color-text-on-primary-background: var(--accent-foreground) !important;
   
-  /* OPTION 1: Gives the card a beautiful, subtle tinted background of your selected color */
-  --clerk-color-background: color-mix(in oklch, var(--accent) 12%, #18181b) !important;
+  /* Maps Clerk's background and text to HeroUI's light mode variables */
+  --clerk-color-background: #ffffff !important;
+  --clerk-color-text: #111111 !important; 
   
-  /* OPTION 2: If you want the background to be the PURE solid accent color instead, use this line: */
-  /* --clerk-color-background: var(--accent) !important; */
+  --clerk-shadow-input: 0 0 0 1px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 🌙 DARK MODE PRESETS (When HeroUI applies the .dark class to the document) */
+.dark {
+  --clerk-color-primary: var(--accent) !important;
+  --clerk-color-text-on-primary-background: var(--accent-foreground) !important;
+  
+  /* Gives the card a beautiful, subtle tinted background of your selected dark color */
+  --clerk-color-background: color-mix(in oklch, var(--accent) 12%, #18181b) !important;
 
   /* Keeps the form labels and main text clean and white on your dark layout */
   --clerk-color-text: #ffffff !important;
@@ -18,26 +28,6 @@
   /* Tint the input fields slightly to match your theme */
   --clerk-shadow-input: 0 0 0 1px color-mix(in oklch, var(--accent) 30%, transparent) !important;
 }
-
-
-/* use this for same dark bacground that website have with same color theme and bacground */
-
-/* :root {
-  --clerk-color-primary: var(--accent) !important;
-  --clerk-color-text-on-primary-background: var(--accent-foreground) !important;
-  
-  /* Maps Clerk's card to Hero UI's background container tokens */
-  /* --clerk-color-background: var(--heroui-content1, var(--background, #ffffff)) !important;
-  --clerk-color-text: var(--heroui-foreground, var(--text, #000000)) !important;
-} */
-
-/* Optional: Customize Clerk border colors to blend into your UI layout */
-/* :root {
-  --clerk-color-alpha-border: rgba(255, 255, 255, 0.1) !important;
-}  */
-
-
-
 
 /* HeroUI's dark fallback uses prefers-color-scheme but forgot [data-theme="light"], so OS dark +
    app light still applied dark: utilities. Re-define so explicit light theme wins system dark. */
@@ -89,5 +79,13 @@
   }
   100% {
     transform: translateX(100%);
+  }
+}
+
+/* 🌟 Append this to the bottom of your src/index.css */
+
+@media (max-width: 768px) {
+  .max-sm\:opacity-45 {
+    opacity: 1 !important;
   }
 }

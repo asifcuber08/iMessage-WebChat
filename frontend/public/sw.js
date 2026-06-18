@@ -22,6 +22,7 @@ self.addEventListener("push", (event) => {
     badge: payload.badge || "/favicon.svg",
     tag: payload.tag || "new-message",
     renotify: true,
+    vibrate: [200, 100, 200], // 🌟 FIXED: Added standard mobile device vibration pattern values array
     data: {
       url: payload.url || "/",
       senderId: payload.senderId,

@@ -23,6 +23,9 @@ export function ChatComposer() {
   const typingTimeoutRef = useRef(null);
   const [pickedMedia, setPickedMedia] = useState(null);
 
+  // 🌟 NEW: Local lock state to stop rapid text double-clicks
+  const [isSendingText, setIsSendingText] = useState(false);
+
   useEffect(() => {
     return () => {
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
@@ -48,21 +51,37 @@ export function ChatComposer() {
   };
 
   const handleSend = async () => {
-    const didSendMessage = pickedMedia
-      ? await sendMediaMessage({
-          conversationId: activeConversationId,
-          file: pickedMedia.file,
-          text: composerText,
-        })
-      : await sendTextMessage(activeConversationId);
+    // 🌟 LOCK: If a text message or a media file is already uploading, skip execution!
+    if (isSendingText || isSendingMedia) return;
 
-    if (didSendMessage && pickedMedia?.previewUrl) {
-      URL.revokeObjectURL(pickedMedia.previewUrl);
-      setPickedMedia(null);
+    // Safety fallback: if no content to send, do nothing
+    if (!composerText.trim() && !pickedMedia) return;
+
+    try {
+      if (!pickedMedia) {
+        setIsSendingText(true); // 🌟 TURN LOCK ON: Instantly blocks rapid duplicate text clicks
+      }
+
+      const didSendMessage = pickedMedia
+        ? await sendMediaMessage({
+            conversationId: activeConversationId,
+            file: pickedMedia.file,
+            text: composerText,
+          })
+        : await sendTextMessage(activeConversationId);
+
+      if (didSendMessage && pickedMedia?.previewUrl) {
+        URL.revokeObjectURL(pickedMedia.previewUrl);
+        setPickedMedia(null);
+      }
+
+      if (didSendMessage) playSoundIfEnabled();
+      requestAnimationFrame(focusComposer);
+    } catch (error) {
+      console.error("Failed to route message:", error);
+    } finally {
+      setIsSendingText(false); // 🌟 TURN LOCK OFF: Safely re-opens the composer for the next chat message
     }
-
-    if (didSendMessage) playSoundIfEnabled();
-    requestAnimationFrame(focusComposer);
   };
 
   const handleComposerTextChange = (event) => {
@@ -167,7 +186,7 @@ export function ChatComposer() {
           type="file"
           accept="image/*,video/*"
           className="sr-only"
-          disabled={isSendingMedia}
+          disabled={isSendingMedia || isSendingText} // 🌟 Disabled input if transit is processing
           tabIndex={-1}
           aria-hidden
           onChange={handleMediaPick}
@@ -175,7 +194,7 @@ export function ChatComposer() {
         <Button
           variant="ghost"
           isIconOnly
-          isDisabled={isSendingMedia}
+          isDisabled={isSendingMedia || isSendingText} // 🌟 Blocks file uploads during text delivery
           className="size-9 shrink-0 touch-manipulation self-end text-accent"
           onPress={() => mediaInputRef.current?.click()}
         >
@@ -187,6 +206,7 @@ export function ChatComposer() {
           placeholder="iMessage"
           rows={1}
           value={composerText}
+          disabled={isSendingText} // 🌟 Optional: freezes writing when input fires
           onChange={handleComposerTextChange}
           onKeyDown={(event) => {
             if (event.key === "Enter" && !event.shiftKey) {
@@ -200,11 +220,16 @@ export function ChatComposer() {
         <Button
           variant="primary"
           isIconOnly
-          isDisabled={isSendingMedia || (!composerText.trim() && !pickedMedia)}
+          // 🌟 UPDATED: Disable the button completely if it's already sending text or media
+          isDisabled={isSendingMedia || isSendingText || (!composerText.trim() && !pickedMedia)}
           onMouseDown={(event) => event.preventDefault()}
           onPress={handleSend}
         >
-          <SendHorizontalIcon className="size-5" />
+          {isSendingText ? (
+            <LoaderIcon className="size-5 animate-spin" /> // Shows a mini loader icon on the button text
+          ) : (
+            <SendHorizontalIcon className="size-5" />
+          )}
         </Button>
       </div>
     </footer>

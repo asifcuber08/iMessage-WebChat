@@ -19,10 +19,36 @@ function ChatPage() {
   const subscribeToTyping = useChatStore((state) => state.subscribeToTyping);
   const unsubscribeFromMessages = useChatStore((state) => state.unsubscribeFromMessages);
   const unsubscribeFromTyping = useChatStore((state) => state.unsubscribeFromTyping);
+  const setActiveConversationId = useChatStore((state) => state.setActiveConversationId); // 🌟 Added setter action
+  
   const onlineUsers = useAuthStore((state) => state.onlineUsers);
   const socket = useAuthStore((state) => state.socket);
 
   const { activeConversation, activeConversationId, isLargeScreen } = useSelectedConversation();
+
+  // 🌟 NEW: Mobile Hardware Back Button Router Hijack
+  useEffect(() => {
+    // We only want this routing behavior running on small mobile screens
+    if (isLargeScreen) return undefined;
+
+    if (activeConversationId) {
+      // 1. Push a dummy navigation state into the history stack when a chat opens
+      window.history.pushState({ chatActive: true }, "");
+
+      // 2. Intercept the hardware / gesture popstate back button trigger
+      const handlePopState = (event) => {
+        event.preventDefault();
+        // Reset the active conversation back to null to slide back to the user list row sidebar
+        setActiveConversationId(null);
+      };
+
+      window.addEventListener("popstate", handlePopState);
+      
+      return () => {
+        window.removeEventListener("popstate", handlePopState);
+      };
+    }
+  }, [activeConversationId, isLargeScreen, setActiveConversationId]);
 
   useEffect(() => {
     getUsers();
@@ -62,7 +88,7 @@ function ChatPage() {
         <ChatSidebar />
 
         <div
-          className={`min-h-0 flex-1 flex-col overflow-hidden ${
+          className={`min-h-0 relative flex-1 flex-col overflow-hidden ${
             !isLargeScreen && !activeConversationId ? "hidden lg:flex" : "flex"
           }`}
         >

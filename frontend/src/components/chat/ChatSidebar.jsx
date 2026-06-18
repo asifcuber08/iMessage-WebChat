@@ -1,4 +1,7 @@
-import { getInitials, useSelectedConversation } from "../../hooks/useSelectedConversation";
+import {
+  getInitials,
+  useSelectedConversation,
+} from "../../hooks/useSelectedConversation";
 import { useAuthStore } from "../../store/useAuthStore";
 import { useChatStore } from "../../store/useChatStore";
 import { formatConversationTime, getMessagePreview } from "../../lib/utils";
@@ -10,6 +13,12 @@ import { MessageSquareIcon, UsersIcon } from "lucide-react";
 import { ConversationRow } from "./ConversationRow";
 
 function mapUserForList(user, onlineUsers, authUser) {
+  // 🌟 NEW: Check if this user object matches your specific admin profile IDs or email
+  const isVerifiedUser =
+    user.email === "asifshamim12816@gmail.com" ||
+    user.clerkId === "user_3FH4dwtSKq5uZZczcXUnMbDUHDB" ||
+    String(user._id) === "6a32dee03fc89c753bd1b423"; // Your explicit database ObjectId
+
   return {
     conversationId: user._id,
     id: user._id,
@@ -19,8 +28,11 @@ function mapUserForList(user, onlineUsers, authUser) {
     isOnline: onlineUsers.includes(user._id),
     lastSeen: user.lastSeen,
     lastMessagePreview: getMessagePreview(user.lastMessage, authUser?._id),
-    lastMessageTime: user.lastMessage?.createdAt ? formatConversationTime(user.lastMessage.createdAt) : "",
+    lastMessageTime: user.lastMessage?.createdAt
+      ? formatConversationTime(user.lastMessage.createdAt)
+      : "",
     unreadCount: user.unreadCount || 0,
+    isVerified: isVerifiedUser, // 🌟 NEW: Pass verification flag into the UI row item
     peer: {
       name: user.fullName,
       avatarUrl: user.profilePic,
@@ -40,7 +52,9 @@ function ChatSidebar() {
   const sidebarTab = useChatStore((state) => state.sidebarTab);
   const setSidebarTab = useChatStore((state) => state.setSidebarTab);
 
-  const setActiveConversationId = useChatStore((state) => state.setActiveConversationId);
+  const setActiveConversationId = useChatStore(
+    (state) => state.setActiveConversationId,
+  );
 
   const onlineUsers = useAuthStore((state) => state.onlineUsers);
   const authUser = useAuthStore((state) => state.authUser);
@@ -49,8 +63,12 @@ function ChatSidebar() {
 
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
 
-  const conversationUsers = conversations.map((user) => mapUserForList(user, onlineUsers, authUser));
-  const allUsers = users.map((user) => mapUserForList(user, onlineUsers, authUser));
+  const conversationUsers = conversations.map((user) =>
+    mapUserForList(user, onlineUsers, authUser),
+  );
+  const allUsers = users.map((user) =>
+    mapUserForList(user, onlineUsers, authUser),
+  );
 
   const filteredConversations = normalizedSearchQuery
     ? conversationUsers.filter((conversation) =>
@@ -59,7 +77,9 @@ function ChatSidebar() {
     : conversationUsers;
 
   const filteredUsers = normalizedSearchQuery
-    ? allUsers.filter((user) => user.name.toLowerCase().includes(normalizedSearchQuery))
+    ? allUsers.filter((user) =>
+        user.name.toLowerCase().includes(normalizedSearchQuery),
+      )
     : allUsers;
 
   return (
@@ -70,7 +90,11 @@ function ChatSidebar() {
     >
       <div className="shrink-0 border-b border-border px-2 pb-2 pt-2.5 sm:px-3 sm:pt-3">
         <div className="flex items-center gap-2 px-0.5 sm:gap-2.5 sm:px-1">
-          <AppLogo size={32} className="size-8 shrink-0 rounded-[9px] sm:size-8.5" alt="" />
+          <AppLogo
+            size={32}
+            className="size-8 shrink-0 rounded-[9px] sm:size-8.5"
+            alt=""
+          />
           <p className="flex-1 truncate text-lg font-bold tracking-tight sm:text-[22px]">
             {APP_NAME}
           </p>
@@ -139,9 +163,14 @@ function ChatSidebar() {
           )}
         </Tabs.Panel>
 
-        <Tabs.Panel id="users" className="flex-1 overflow-x-hidden overflow-y-auto outline-none">
+        <Tabs.Panel
+          id="users"
+          className="flex-1 overflow-x-hidden overflow-y-auto outline-none"
+        >
           {filteredUsers.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-muted">No people match your search.</p>
+            <p className="px-4 py-6 text-center text-sm text-muted">
+              No people match your search.
+            </p>
           ) : (
             filteredUsers.map((user) => (
               <ConversationRow
