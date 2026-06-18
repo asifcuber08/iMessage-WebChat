@@ -89,3 +89,21 @@
     opacity: 1 !important;
   }
 }
+
+/* 🔒 CRUCIAL MOBILE VIEWPORT LOCK: Hard locks the parent document viewport so mobile keyboards cannot shift layout headers */
+html, 
+body, 
+#root {
+  height: 100vh;
+  height: -webkit-fill-available; /* Fills iOS screens perfectly around safari hardware panels */
+  width: 100vw;
+  overflow: hidden;
+  position: fixed; /* Prevents the window body layout canvas from bouncing or rolling upwards */
+}
+
+/* Optimizes viewport margins on smartphone PWA screens */
+@media (max-width: 768px) {
+  :root {
+    viewport-fit: cover;
+  }
+}
