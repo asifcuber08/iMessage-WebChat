@@ -22,7 +22,7 @@
       "purpose": "any maskable"
     },
     {
-      "src": "/notification-badge.png",
+      "src": "/notification-monochrome.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "monochrome"

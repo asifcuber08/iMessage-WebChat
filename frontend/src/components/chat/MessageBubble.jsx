@@ -190,7 +190,7 @@ export function MessageBubble({
                     }}
                   >
                     <Trash2Icon className="size-3.5" strokeWidth={2} />
-                    Delete
+                    for Everyone
                   </button>
                 </>
               ) : null}
