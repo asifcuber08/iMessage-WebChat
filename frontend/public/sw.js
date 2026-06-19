@@ -8,7 +8,6 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("push", (event) => {
   let payload;
-
   try {
     payload = event.data?.json() || {};
   } catch {
@@ -18,14 +17,11 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "New message";
   const options = {
     body: payload.body || "Open iMessage to read it.",
-    
-    // 🌟 CHANGED: Fallback to the dedicated transparent monochrome icon here
-    icon: payload.icon || "/notification-monochrome.png", 
+    icon: payload.icon || "/logo.png",
     badge: payload.badge || "/notification-monochrome.png",
-    
     tag: payload.tag || "new-message",
     renotify: true,
-    vibrate: [200, 100, 200],
+    vibrate: [200, 100, 200], // 🌟 FIXED: Added standard mobile device vibration pattern values array
     data: {
       url: payload.url || "/",
       senderId: payload.senderId,
@@ -38,19 +34,22 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-
   const targetUrl = event.notification.data?.url || "/";
 
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
-      const existingClient = clients.find((client) => client.url.includes(self.location.origin));
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => {
+        const existingClient = clients.find((client) =>
+          client.url.includes(self.location.origin),
+        );
 
-      if (existingClient) {
-        existingClient.focus();
-        return existingClient.navigate(targetUrl);
-      }
+        if (existingClient) {
+          existingClient.focus();
+          return existingClient.navigate(targetUrl);
+        }
 
-      return self.clients.openWindow(targetUrl);
-    }),
+        return self.clients.openWindow(targetUrl);
+      }),
   );
 });

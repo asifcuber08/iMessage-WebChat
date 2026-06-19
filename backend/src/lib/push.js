@@ -22,22 +22,22 @@ function getMessageBody(message) {
   return "Sent a message";
 }
 
-// Helper function to get the absolute URL for the sender's avatar photo
+// 🌟 FIXED CODES HELPER: Properly encapsulated function block shell wrapper
+
 function getAbsoluteIconUrl(avatarUrl) {
-  const liveOrigin = process.env.FRONTEND_URL || "https://onrender.com"; 
+  const liveOrigin = process.env.FRONTEND_URL || "https://onrender.com";
 
   if (!avatarUrl) {
-    return `${liveOrigin}/logo.png`; 
+    return `${liveOrigin}/logo.png`;
   }
-
+  
   if (avatarUrl.startsWith("http://") || avatarUrl.startsWith("https://")) {
     if (avatarUrl.includes("ik.imagekit.io")) {
       const separator = avatarUrl.includes("?") ? "&" : "?";
-      return `${avatarUrl}${separator}tr=w-192,h-192,fo-face,r-max`; 
+      return `${avatarUrl}${separator}tr=w-192,h-192,fo-face,r-max`;
     }
     return avatarUrl;
   }
-
   return `${liveOrigin}${avatarUrl}`;
 }
 
@@ -50,20 +50,14 @@ export async function sendMessagePushNotification({
 
   const receiver = await User.findById(receiverId).select("pushSubscriptions");
   const subscriptions = receiver?.pushSubscriptions || [];
+
   if (!subscriptions.length) return;
 
-  // 🌟 FIX: Separate the status bar icon from the sender's profile picture avatar
   const payload = JSON.stringify({
     title: sender?.fullName || "New message",
     body: getMessageBody(message),
-    
-    // 🛠️ Force the icon and badge to use your dedicated transparent monochrome asset
-    icon: "/notification-monochrome.png", 
+    icon: getAbsoluteIconUrl(sender?.profilePic),
     badge: "/notification-monochrome.png",
-    
-    // 📸 Put the sender's profile picture or uploaded image context here so it displays on the right side
-    image: getAbsoluteIconUrl(sender?.profilePic), 
-
     tag: `message-${message.senderId}`,
     url: "/",
     senderId: String(message.senderId),
