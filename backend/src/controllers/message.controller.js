@@ -60,6 +60,9 @@ export async function getConversationsForSidebar(req, res) {
                   text: "$lastMessage.text",
                   image: "$lastMessage.image",
                   video: "$lastMessage.video",
+                  readBy: "$lastMessage.readBy",
+                  deliveredTo: "$lastMessage.deliveredTo",
+                  editedAt: "$lastMessage.editedAt",
                   createdAt: "$lastMessage.createdAt",
                 },
                 unreadCount: "$unreadCount",
@@ -83,10 +86,26 @@ export async function getMessages(req, res) {
     const { id: userToChatId } = req.params;
     const myId = req.user._id;
 
+    const unreadMessages = await Message.find({
+      senderId: userToChatId,
+      receiverId: myId,
+      readBy: { $ne: myId },
+    }).select("_id");
+
     await Message.updateMany(
       { senderId: userToChatId, receiverId: myId, readBy: { $ne: myId } },
       { $addToSet: { readBy: myId } },
     );
+
+    const readMessageIds = unreadMessages.map((message) => String(message._id));
+    if (readMessageIds.length) {
+      getReceiverSocketIds(userToChatId).forEach((socketId) => {
+        io.to(socketId).emit("messagesRead", {
+          readerId: String(myId),
+          messageIds: readMessageIds,
+        });
+      });
+    }
 
     const messages = await Message.find({
       $or: [
@@ -112,6 +131,7 @@ export async function sendMessage(req, res) {
 
     let imageUrl;
     let videoUrl;
+    const receiverSocketIds = getReceiverSocketIds(receiverId);
 
     if (req.file) {
       if (!hasImageKitConfig()) {
@@ -148,12 +168,11 @@ export async function sendMessage(req, res) {
       video: videoUrl,
       replyTo: replyToMessageId,
       readBy: [senderId],
+      deliveredTo: receiverSocketIds.length ? [receiverId] : [],
     });
 
     await newMessage.save();
     await newMessage.populate("replyTo", "senderId receiverId text image video createdAt");
-
-    const receiverSocketIds = getReceiverSocketIds(receiverId);
 
     // only send the message in realtime if user is online
     receiverSocketIds.forEach((receiverSocketId) => {

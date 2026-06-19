@@ -24,6 +24,7 @@ export const useChatStore = create(
       users: [],
       conversations: [],
       messages: [],
+      messagesByConversation: {},
       selectedUser: null,
       isConversationsLoading: false,
       isUsersLoading: false,
@@ -71,11 +72,19 @@ export const useChatStore = create(
 
       getMessages: async (userId) => {
         if (!userId) return;
-        set({ isMessagesLoading: true });
+        const cachedMessages = get().messagesByConversation[String(userId)];
+        if (cachedMessages) set({ messages: cachedMessages });
+        set({ isMessagesLoading: !cachedMessages });
         try {
           const res = await axiosInstance.get(`/messages/${userId}`);
           if (String(get().activeConversationId) === String(userId)) {
-            set({ messages: res.data });
+            set((state) => ({
+              messages: res.data,
+              messagesByConversation: {
+                ...state.messagesByConversation,
+                [String(userId)]: res.data,
+              },
+            }));
           }
           get().getConversations();
         } catch (error) {
@@ -99,7 +108,15 @@ export const useChatStore = create(
           }
 
           const res = await axiosInstance.post(`/messages/send/${selectedUser._id}`, messageData);
-          set({ messages: [...messages, res.data], composerText: "", replyingTo: null });
+          set((state) => ({
+            messages: [...messages, res.data],
+            messagesByConversation: {
+              ...state.messagesByConversation,
+              [String(selectedUser._id)]: [...(state.messagesByConversation[String(selectedUser._id)] || messages), res.data],
+            },
+            composerText: "",
+            replyingTo: null,
+          }));
           get().stopTyping(selectedUser._id);
           get().getConversations();
           return true;
@@ -120,9 +137,21 @@ export const useChatStore = create(
           const isOpenConversation = String(activeConversationId) === senderId;
 
           if (isOpenConversation) {
-            set({ messages: [...messages, newMessage] });
+            set((state) => ({
+              messages: [...messages, newMessage],
+              messagesByConversation: {
+                ...state.messagesByConversation,
+                [senderId]: [...(state.messagesByConversation[senderId] || messages), newMessage],
+              },
+            }));
             axiosInstance.get(`/messages/${senderId}`).then((res) => {
-              set({ messages: res.data });
+              set((state) => ({
+                messages: res.data,
+                messagesByConversation: {
+                  ...state.messagesByConversation,
+                  [senderId]: res.data,
+                },
+              }));
               get().getConversations();
             });
           } else {
@@ -139,6 +168,12 @@ export const useChatStore = create(
         socket.on("messageDeleted", ({ messageId, senderId, receiverId }) => {
           set((state) => ({
             messages: state.messages.filter((message) => String(message._id) !== String(messageId)),
+            messagesByConversation: Object.fromEntries(
+              Object.entries(state.messagesByConversation).map(([conversationId, conversationMessages]) => [
+                conversationId,
+                conversationMessages.filter((message) => String(message._id) !== String(messageId)),
+              ]),
+            ),
             typingUsers: { ...state.typingUsers, [senderId]: false, [receiverId]: false },
           }));
           get().getConversations();
@@ -150,6 +185,37 @@ export const useChatStore = create(
             messages: state.messages.map((message) =>
               String(message._id) === String(editedMessage._id) ? editedMessage : message,
             ),
+            messagesByConversation: Object.fromEntries(
+              Object.entries(state.messagesByConversation).map(([conversationId, conversationMessages]) => [
+                conversationId,
+                conversationMessages.map((message) =>
+                  String(message._id) === String(editedMessage._id) ? editedMessage : message,
+                ),
+              ]),
+            ),
+          }));
+          get().getConversations();
+        });
+
+        socket.off("messagesRead");
+        socket.on("messagesRead", ({ readerId, messageIds }) => {
+          const readMessageIds = new Set((messageIds || []).map(String));
+          const markRead = (message) =>
+            readMessageIds.has(String(message._id))
+              ? {
+                  ...message,
+                  readBy: Array.from(new Set([...(message.readBy || []).map(String), String(readerId)])),
+                }
+              : message;
+
+          set((state) => ({
+            messages: state.messages.map(markRead),
+            messagesByConversation: Object.fromEntries(
+              Object.entries(state.messagesByConversation).map(([conversationId, conversationMessages]) => [
+                conversationId,
+                conversationMessages.map(markRead),
+              ]),
+            ),
           }));
           get().getConversations();
         });
@@ -160,6 +226,7 @@ export const useChatStore = create(
         socket?.off("newMessage");
         socket?.off("messageDeleted");
         socket?.off("messageEdited");
+        socket?.off("messagesRead");
       },
 
       subscribeToTyping: () => {
@@ -191,7 +258,10 @@ export const useChatStore = create(
             state.users.find((user) => user._id === activeConversationId) ||
             state.conversations.find((user) => user._id === activeConversationId) ||
             null,
-          messages: activeConversationId === state.activeConversationId ? state.messages : [],
+          messages:
+            activeConversationId === state.activeConversationId
+              ? state.messages
+              : state.messagesByConversation[String(activeConversationId)] || [],
         }));
       },
 
@@ -200,6 +270,12 @@ export const useChatStore = create(
           await axiosInstance.delete(`/messages/${messageId}`);
           set((state) => ({
             messages: state.messages.filter((message) => String(message._id) !== String(messageId)),
+            messagesByConversation: Object.fromEntries(
+              Object.entries(state.messagesByConversation).map(([conversationId, conversationMessages]) => [
+                conversationId,
+                conversationMessages.filter((message) => String(message._id) !== String(messageId)),
+              ]),
+            ),
           }));
           get().getConversations();
           return true;
@@ -215,6 +291,14 @@ export const useChatStore = create(
           set((state) => ({
             messages: state.messages.map((message) =>
               String(message._id) === String(messageId) ? res.data : message,
+            ),
+            messagesByConversation: Object.fromEntries(
+              Object.entries(state.messagesByConversation).map(([conversationId, conversationMessages]) => [
+                conversationId,
+                conversationMessages.map((message) =>
+                  String(message._id) === String(messageId) ? res.data : message,
+                ),
+              ]),
             ),
           }));
           get().getConversations();

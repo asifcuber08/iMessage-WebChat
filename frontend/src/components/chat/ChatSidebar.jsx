@@ -12,12 +12,21 @@ import { SearchField, Tabs } from "@heroui/react";
 import { MessageSquareIcon, UsersIcon } from "lucide-react";
 import { ConversationRow } from "./ConversationRow";
 
-function mapUserForList(user, onlineUsers, authUser) {
+function mapUserForList(user, onlineUsers, authUser, typingUsers) {
   // 🌟 NEW: Check if this user object matches your specific admin profile IDs or email
   const isVerifiedUser =
     user.email === "asifshamim12816@gmail.com" ||
     user.clerkId === "user_3FH4dwtSKq5uZZczcXUnMbDUHDB" ||
     String(user._id) === "6a32dee03fc89c753bd1b423"; // Your explicit database ObjectId
+
+  const getLastMessageStatus = () => {
+    if (String(user.lastMessage?.senderId) !== String(authUser?._id)) return null;
+    if (user.lastMessage?.readBy?.some((userId) => String(userId) === String(user._id))) return "read";
+    if (user.lastMessage?.deliveredTo?.some((userId) => String(userId) === String(user._id))) {
+      return "delivered";
+    }
+    return "sent";
+  };
 
   return {
     conversationId: user._id,
@@ -28,10 +37,12 @@ function mapUserForList(user, onlineUsers, authUser) {
     isOnline: onlineUsers.includes(user._id),
     lastSeen: user.lastSeen,
     lastMessagePreview: getMessagePreview(user.lastMessage, authUser?._id),
+    lastMessageStatus: getLastMessageStatus(),
     lastMessageTime: user.lastMessage?.createdAt
       ? formatConversationTime(user.lastMessage.createdAt)
       : "",
     unreadCount: user.unreadCount || 0,
+    isTyping: Boolean(typingUsers[user._id]),
     isVerified: isVerifiedUser, // 🌟 NEW: Pass verification flag into the UI row item
     peer: {
       name: user.fullName,
@@ -51,6 +62,7 @@ function ChatSidebar() {
 
   const sidebarTab = useChatStore((state) => state.sidebarTab);
   const setSidebarTab = useChatStore((state) => state.setSidebarTab);
+  const typingUsers = useChatStore((state) => state.typingUsers);
 
   const setActiveConversationId = useChatStore(
     (state) => state.setActiveConversationId,
@@ -64,10 +76,10 @@ function ChatSidebar() {
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
 
   const conversationUsers = conversations.map((user) =>
-    mapUserForList(user, onlineUsers, authUser),
+    mapUserForList(user, onlineUsers, authUser, typingUsers),
   );
   const allUsers = users.map((user) =>
-    mapUserForList(user, onlineUsers, authUser),
+    mapUserForList(user, onlineUsers, authUser, typingUsers),
   );
 
   const filteredConversations = normalizedSearchQuery

@@ -15,6 +15,7 @@ export function MessageList() {
   const setReplyingTo = useChatStore((state) => state.setReplyingTo);
   const messageRefs = useRef(new Map());
   const [highlightedMessageId, setHighlightedMessageId] = useState(null);
+  const [openActionMessageId, setOpenActionMessageId] = useState(null);
 
   const lastMessageId = activeConversation?.messages.at(-1)?.id;
   const messagesScrollRef = useScrollToBottom(
@@ -74,9 +75,14 @@ export function MessageList() {
                 message={message}
                 onDelete={handleDelete}
                 onEdit={handleEdit}
+                onMenuOpenChange={(isOpen) =>
+                  setOpenActionMessageId(isOpen ? String(message.id) : null)
+                }
                 onReply={setReplyingTo}
                 onJumpToReply={handleJumpToReply}
+                isAnyMenuOpen={Boolean(openActionMessageId)}
                 isHighlighted={highlightedMessageId === String(message.id)}
+                isMenuOpen={openActionMessageId === String(message.id)}
               />
             </div>
           ))}

@@ -1,7 +1,17 @@
 import { Avatar } from "@heroui/react";
+import { CheckCheckIcon, CheckIcon } from "lucide-react";
 import { AvatarWithOnlineIndicator } from "./AvatarWithOnlineIndicator";
 
 export function ConversationRow({ user, selected, onSelect }) {
+  const statusIcon =
+    user.lastMessageStatus === "read" ? (
+      <CheckCheckIcon className="size-4 shrink-0 text-sky-500" strokeWidth={2.5} aria-label="Seen" />
+    ) : user.lastMessageStatus === "delivered" ? (
+      <CheckCheckIcon className="size-4 shrink-0 text-muted" strokeWidth={2.5} aria-label="Delivered" />
+    ) : user.lastMessageStatus === "sent" ? (
+      <CheckIcon className="size-4 shrink-0 text-muted" strokeWidth={2.5} aria-label="Sent" />
+    ) : null;
+
   return (
     <button
       type="button"
@@ -44,13 +54,22 @@ export function ConversationRow({ user, selected, onSelect }) {
           ) : null}
         </div>
         <div className="mt-0.5 flex min-w-0 items-center gap-2">
-          <p
-            className={`min-w-0 flex-1 truncate text-sm ${
-              user.unreadCount ? "font-semibold text-foreground" : "text-muted"
-            }`}
-          >
-            {user.lastMessagePreview || (user.isOnline ? "Online" : "Tap to start chatting")}
-          </p>
+          <div className="flex min-w-0 flex-1 items-center gap-1">
+            {user.isTyping ? null : statusIcon}
+            <p
+              className={`min-w-0 flex-1 truncate text-sm ${
+                user.isTyping
+                  ? "font-semibold text-success"
+                  : user.unreadCount
+                    ? "font-semibold text-foreground"
+                    : "text-muted"
+              }`}
+            >
+              {user.isTyping
+                ? "Typing..."
+                : user.lastMessagePreview || (user.isOnline ? "Online" : "Tap to start chatting")}
+            </p>
+          </div>
           {user.unreadCount ? (
             <span className="flex min-w-5 shrink-0 items-center justify-center rounded-full bg-accent px-1.5 py-0.5 text-[11px] font-bold leading-none text-accent-foreground">
               {user.unreadCount > 99 ? "99+" : user.unreadCount}

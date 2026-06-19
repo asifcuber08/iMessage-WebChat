@@ -20,6 +20,18 @@ export function getInitials(name) {
 
 function mapUserToConversation({ user, messages, authUser, onlineUsers }) {
   const rawMessageById = new Map(messages.map((message) => [String(message._id), message]));
+  const isVerifiedUser =
+    user.email === "asifshamim12816@gmail.com" ||
+    user.clerkId === "user_3FH4dwtSKq5uZZczcXUnMbDUHDB" ||
+    String(user._id) === "6a32dee03fc89c753bd1b423";
+
+  const getMessageStatus = (message) => {
+    if (String(message.senderId) !== String(authUser?._id)) return null;
+    if (message.readBy?.some((userId) => String(userId) === String(user._id))) return "read";
+    if (message.deliveredTo?.some((userId) => String(userId) === String(user._id))) return "delivered";
+    return "sent";
+  };
+
   const mapReplyPreview = (replyTo) => {
     const replyMessage =
       typeof replyTo === "object" && replyTo !== null ? replyTo : rawMessageById.get(String(replyTo));
@@ -43,6 +55,7 @@ function mapUserToConversation({ user, messages, authUser, onlineUsers }) {
     role: String(message.senderId) === String(authUser?._id) ? "me" : "them",
     text: message.text || "",
     time: formatMessageTime(message.createdAt),
+    status: getMessageStatus(message),
     isEdited: Boolean(message.editedAt),
     imageUrl: message.image,
     videoUrl: message.video,
@@ -57,6 +70,9 @@ function mapUserToConversation({ user, messages, authUser, onlineUsers }) {
       isOnline: onlineUsers.includes(user._id),
       isTyping: false,
       lastSeen: user.lastSeen,
+      email: user.email,
+      clerkId: user.clerkId,
+      isVerified: isVerifiedUser,
       avatarUrl: user.profilePic,
       initials: getInitials(user.fullName),
     },

@@ -89,14 +89,13 @@ export function ChatHeader() {
               </p>
               
               {/* Dynamic Verification Checkmark Indicator */}
-              {(activeConversation.peer.email === "asifshamim12816@gmail.com" || 
-                activeConversation.peer.clerkId === "user_3FH4dwtSKq5uZZczcXUnMbDUHDB") && (
+              {activeConversation.peer.isVerified ? (
                 <span className="inline-flex items-center justify-center size-3.5 rounded-full bg-sky-500 text-white shadow-sm shrink-0">
                   <svg xmlns="http://w3.org" viewBox="0 0 24 24" fill="currentColor" className="size-2.5">
                     <path fillRule="evenodd" d="M19.916 4.626a.75.75 0 0 1 .208 1.04l-9 13.5a.75.75 0 0 1-1.154.114l-6-6a.75.75 0 0 1 1.06-1.06l5.353 5.353 8.493-12.74a.75.75 0 0 1 1.04-.207Z" clipRule="evenodd" />
                   </svg>
                 </span>
-              )}
+              ) : null}
             </div>
             
             <p className="truncate text-xs text-muted">

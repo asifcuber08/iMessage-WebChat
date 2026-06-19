@@ -1,5 +1,12 @@
 import { Button } from "@heroui/react";
-import { CornerUpLeftIcon, MoreVerticalIcon, PencilIcon, Trash2Icon } from "lucide-react";
+import {
+  CheckCheckIcon,
+  CheckIcon,
+  CornerUpLeftIcon,
+  MoreVerticalIcon,
+  PencilIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { useRef, useState, useEffect } from "react";
 import { withTransform } from "../../lib/imagekit";
 import { MessageVideo } from "./MessageVideo";
@@ -7,14 +14,23 @@ import { MessageVideo } from "./MessageVideo";
 // Compress + size images for the bubble (q-auto works for images; f-auto picks WebP/AVIF).
 const IMAGE_TRANSFORM = "q-auto,w-640,f-auto";
 
-export function MessageBubble({ message, onDelete, onEdit, onReply, onJumpToReply, isHighlighted }) {
+export function MessageBubble({
+  message,
+  onDelete,
+  onEdit,
+  onMenuOpenChange,
+  onReply,
+  onJumpToReply,
+  isAnyMenuOpen,
+  isHighlighted,
+  isMenuOpen,
+}) {
   const isOwnMessage = message.role === "me";
   const hasImage = Boolean(message.imageUrl);
   const hasVideo = Boolean(message.videoUrl);
   const touchStartRef = useRef(null);
   const didSwipeRef = useRef(false);
   const [dragOffset, setDragOffset] = useState(0);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleReply = () => onReply?.(message);
   const handleDelete = () => onDelete?.(message);
@@ -63,12 +79,21 @@ export function MessageBubble({ message, onDelete, onEdit, onReply, onJumpToRepl
     if (!isMenuOpen) return;
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
-        setIsMenuOpen(false);
+        onMenuOpenChange?.(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMenuOpen]);
+  }, [isMenuOpen, onMenuOpenChange]);
+
+  const statusIcon =
+    message.status === "read" ? (
+      <CheckCheckIcon className="size-3.5 text-sky-300" strokeWidth={2.5} aria-label="Seen" />
+    ) : message.status === "delivered" ? (
+      <CheckCheckIcon className="size-3.5" strokeWidth={2.5} aria-label="Delivered" />
+    ) : message.status === "sent" ? (
+      <CheckIcon className="size-3.5" strokeWidth={2.5} aria-label="Sent" />
+    ) : null;
 
   return (
     <div
@@ -101,7 +126,14 @@ export function MessageBubble({ message, onDelete, onEdit, onReply, onJumpToRepl
         } ${isHighlighted ? "ring-2 ring-warning ring-offset-2 ring-offset-background" : ""}`}
       >
         {/* Actions Dropdown Menu sitting INSIDE the bubble layout framework */}
-        <div ref={menuRef} className="absolute right-1.5 top-1.5 z-30 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity duration-150 max-sm:opacity-45">
+        <div
+          ref={menuRef}
+          className={`absolute right-1.5 top-1.5 z-30 transition-opacity duration-150 ${
+            isAnyMenuOpen && !isMenuOpen
+              ? "pointer-events-none opacity-0"
+              : "opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-sm:opacity-45"
+          }`}
+        >
           <Button
             variant="light"
             size="sm"
@@ -110,7 +142,7 @@ export function MessageBubble({ message, onDelete, onEdit, onReply, onJumpToRepl
             aria-label="Message options"
             onClick={(e) => {
               e.stopPropagation(); // Stops main bubble tap trigger from firing code
-              setIsMenuOpen((open) => !open);
+              onMenuOpenChange?.(!isMenuOpen);
             }}
           >
             <MoreVerticalIcon className="size-3.5" strokeWidth={2.5} />
@@ -118,7 +150,9 @@ export function MessageBubble({ message, onDelete, onEdit, onReply, onJumpToRepl
 
           {isMenuOpen ? (
             <div
-              className="pointer-events-auto absolute right-0 top-7 z-50 min-w-36 rounded-xl border border-border bg-white p-1 text-foreground shadow-2xl dark:bg-zinc-950"
+              className={`pointer-events-auto absolute top-7 z-50 min-w-36 max-w-[calc(100vw-1rem)] rounded-xl border border-border bg-white p-1 text-foreground shadow-2xl dark:bg-zinc-950 ${
+                isOwnMessage ? "right-0" : "left-0"
+              }`}
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
             >
@@ -126,7 +160,7 @@ export function MessageBubble({ message, onDelete, onEdit, onReply, onJumpToRepl
                 type="button"
                 className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium hover:bg-content2"
                 onClick={() => {
-                  setIsMenuOpen(false);
+                  onMenuOpenChange?.(false);
                   handleReply();
                 }}
               >
@@ -140,7 +174,7 @@ export function MessageBubble({ message, onDelete, onEdit, onReply, onJumpToRepl
                     type="button"
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium hover:bg-content2"
                     onClick={() => {
-                      setIsMenuOpen(false);
+                      onMenuOpenChange?.(false);
                       handleEdit();
                     }}
                   >
@@ -151,7 +185,7 @@ export function MessageBubble({ message, onDelete, onEdit, onReply, onJumpToRepl
                     type="button"
                     className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-xs font-medium text-danger hover:bg-danger-50"
                     onClick={() => {
-                      setIsMenuOpen(false);
+                      onMenuOpenChange?.(false);
                       handleDelete();
                     }}
                   >
@@ -208,12 +242,12 @@ export function MessageBubble({ message, onDelete, onEdit, onReply, onJumpToRepl
 
         {/* Timestamp */}
         <p
-          className={`mt-1 text-[11px] tabular-nums ${
+          className={`mt-1 flex items-center justify-end gap-1 text-[11px] tabular-nums ${
             isOwnMessage ? "text-accent-foreground/75" : "text-muted"
           }`}
         >
-          {message.time}
-          {message.isEdited ? " edited" : ""}
+          <span>{message.time}{message.isEdited ? " edited" : ""}</span>
+          {statusIcon}
         </p>
       </div>
     </div>
