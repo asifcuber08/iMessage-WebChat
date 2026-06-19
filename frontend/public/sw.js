@@ -18,11 +18,14 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "New message";
   const options = {
     body: payload.body || "Open iMessage to read it.",
-    icon: payload.icon || "/logo.png",
-    badge: payload.badge || "/notification-badge.png",
+    
+    // 🌟 CHANGED: Fallback to the dedicated transparent monochrome icon here
+    icon: payload.icon || "/notification-monochrome.png", 
+    badge: payload.badge || "/notification-monochrome.png",
+    
     tag: payload.tag || "new-message",
     renotify: true,
-    vibrate: [200, 100, 200], // 🌟 FIXED: Added standard mobile device vibration pattern values array
+    vibrate: [200, 100, 200],
     data: {
       url: payload.url || "/",
       senderId: payload.senderId,

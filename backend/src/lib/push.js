@@ -22,7 +22,7 @@ function getMessageBody(message) {
   return "Sent a message";
 }
 
-// 🌟 FIXED CODES HELPER: Properly encapsulated function block shell wrapper
+// Helper function to get the absolute URL for the sender's avatar photo
 function getAbsoluteIconUrl(avatarUrl) {
   const liveOrigin = process.env.FRONTEND_URL || "https://onrender.com"; 
 
@@ -52,11 +52,18 @@ export async function sendMessagePushNotification({
   const subscriptions = receiver?.pushSubscriptions || [];
   if (!subscriptions.length) return;
 
+  // 🌟 FIX: Separate the status bar icon from the sender's profile picture avatar
   const payload = JSON.stringify({
     title: sender?.fullName || "New message",
     body: getMessageBody(message),
-    icon: getAbsoluteIconUrl(sender?.profilePic), 
-    badge: "/notification-badge.png",
+    
+    // 🛠️ Force the icon and badge to use your dedicated transparent monochrome asset
+    icon: "/notification-monochrome.png", 
+    badge: "/notification-monochrome.png",
+    
+    // 📸 Put the sender's profile picture or uploaded image context here so it displays on the right side
+    image: getAbsoluteIconUrl(sender?.profilePic), 
+
     tag: `message-${message.senderId}`,
     url: "/",
     senderId: String(message.senderId),
